@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
-import { requestLoggerMW } from "./middleware/requestLoggerMW.js";
+import { requestLoggerMW } from "./middlewares/requestLoggerMW.js";
 
 
 dotenv.config();
