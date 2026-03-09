@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import { requestLoggerMW } from "./middlewares/requestLoggerMW.js";
+import { errorHandler } from "./errors/errorHandler.js";
 
 
 dotenv.config();
@@ -30,6 +31,7 @@ const createApp = () => {
 
   // ======================== ERROR Handler
   // Error handler must be last thing
+  app.use(errorHandler)
 
   return app;
 };
