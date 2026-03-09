@@ -4,6 +4,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
+import { requestLoggerMW } from "./middleware/requestLoggerMW.js";
+
+
 dotenv.config();
 
 const createApp = () => {
@@ -19,6 +22,7 @@ const createApp = () => {
 
   // ======================== For Test
   // log each request
+  app.use(requestLoggerMW)
 
   // ======================== SECURE
 
