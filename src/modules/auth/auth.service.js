@@ -4,10 +4,14 @@ import { env } from "../../config/env.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { ROLES } from "../../constants/roles.js";
 import {
+  decodeToken,
   generateAccessToken,
   generateRefreshToken,
 } from "../../services/token.service.js";
-import { createConflictError, createUnauthorizedError } from "../../errors/error.factory.js";
+import {
+  createConflictError,
+  createUnauthorizedError,
+} from "../../errors/error.factory.js";
 import { getExpiryDate } from "../../utils/date.util.js";
 import { hashValue, verifyPassword } from "../../utils/hash.util.js";
 
@@ -115,4 +119,34 @@ export const loginUser = async (email, password, currentRefreshToken) => {
     accessToken,
     refreshToken,
   };
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Invalidate refresh token on logout
+ * @param   {string} refreshToken - Token stored in httpOnly cookie
+ * @returns {void}
+ */
+export const logoutUser = async (refreshToken) => {
+  // 1. decode refreshToken
+  const decoded = decodeToken(refreshToken);
+  if (!decoded || !decoded.userId) return;
+  // 2. check if user exist
+  const user = await User.findById(decoded.userId).exec();
+  if (!user) return;
+  // 3. hash token & detect token reused
+  const hashedToken = hashValue(refreshToken);
+  const tokenInDB = user.refreshTokens.find((rt) => rt.token === hashedToken);
+  if (!tokenInDB) {
+    // user has been hacked - wipe all
+    user.refreshTokens = [];
+  } else {
+    // just remove token from user
+    user.refreshTokens = user.refreshTokens.filter(
+      (rt) => rt.token !== hashedToken
+    );
+  }
+  // 4. save changes inDB
+  await user.save();
 };

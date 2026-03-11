@@ -11,5 +11,8 @@ const router = express.Router();
 router.post("/register-user", AuthController.register);
 router.post("/login", AuthController.login);
 
+// ----------------- Private Routes -----------------
+router.post("/logout", AuthController.logout);
+
 
 export default router;
