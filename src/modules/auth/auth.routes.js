@@ -9,5 +9,7 @@ const router = express.Router();
 
 // ----------------- Public Routes -----------------
 router.post("/register-user", AuthController.register);
+router.post("/login", AuthController.login);
+
 
 export default router;
