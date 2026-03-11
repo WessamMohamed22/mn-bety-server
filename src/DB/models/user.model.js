@@ -1,7 +1,7 @@
 import { mongoose } from "mongoose";
 import { ROLES } from "../../constants/roles.js";
 import { MESSAGES } from "../../constants/messages.js";
-import { hashPassword } from "../../utils/hash.utils.js";
+import { hashPassword } from "../../utils/hash.util.js";
 import { REGEX } from "../../utils/regex.util.js";
 
 const userSchema = new mongoose.Schema(
