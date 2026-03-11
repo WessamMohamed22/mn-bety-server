@@ -13,6 +13,8 @@ router.post("/login", AuthController.login);
 
 // ----------------- Private Routes -----------------
 router.post("/logout", AuthController.logout);
+router.post("/refresh-token", AuthController.refreshToken);
+
 
 
 export default router;

@@ -3,12 +3,15 @@ import asyncHandler from "../../middlewares/asynHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { HEADERS } from "../../constants/headers.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";
-import { getClearCookieConfig, getRefreshCookieConfig } from "../../config/cookie.config.js";
+import {
+  getClearCookieConfig,
+  getRefreshCookieConfig,
+} from "../../config/cookie.config.js";
 import {
   createdResponse,
   successResponse,
 } from "../../utils/apiResponse.util.js";
-import { createBadRequestError } from "../../errors/error.factory.js";
+import { createBadRequestError, createUnauthorizedError } from "../../errors/error.factory.js";
 
 // ============================================================
 //                      AUTH CONTROLLER
@@ -86,4 +89,32 @@ export const logout = asyncHandler(async (req, res) => {
   if (refreshToken) await AuthService.logoutUser(refreshToken);
   // 4. return no content
   res.status(HTTP_STATUS.NO_CONTENT).end();
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Refresh access token using refresh token
+ * @route   POST /api/auth/refresh-token
+ * @access  Public
+ */
+export const refreshToken = asyncHandler(async (req, res) => {
+  // 1. check refresh token exists in cookie
+  const currentRefreshToken = req.cookies?.[HEADERS.REFRESH_TOKEN];
+  if (!currentRefreshToken)
+    throw createUnauthorizedError(MESSAGES.AUTH.NO_TOKEN);
+
+  // 2. clear old refresh token cookie
+  res.clearCookie(HEADERS.REFRESH_TOKEN, getClearCookieConfig());
+
+  // 3. rotate refresh token and get new access token
+  const { accessToken, refreshToken } = await AuthService.refreshTokens(
+    currentRefreshToken
+  );
+
+  // 4. set new refresh token in cookie:
+  res.cookie(HEADERS.REFRESH_TOKEN, refreshToken, getRefreshCookieConfig());
+
+  // 5. return new access token to client
+  res.json(createdResponse(accessToken, MESSAGES.AUTH.TOKEN_REFRESHED));
 });

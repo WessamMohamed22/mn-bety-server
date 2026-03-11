@@ -7,6 +7,7 @@ import {
   decodeToken,
   generateAccessToken,
   generateRefreshToken,
+  verifyRefreshToken,
 } from "../../services/token.service.js";
 import {
   createConflictError,
@@ -150,3 +151,61 @@ export const logoutUser = async (refreshToken) => {
   // 4. save changes inDB
   await user.save();
 };
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Verify refresh token and issue new access token
+ * @param   {string} refreshToken - Token stored in httpOnly cookie
+ * @returns {Object} accessToken
+ */
+export const refreshTokens = async (currentRefreshToken) => {
+  // 1. hash current refreshToken
+  const hashedToken = hashValue(currentRefreshToken);
+  // 2. find user who owns this token
+  const user = await User.findOne({
+    "refreshTokens.token": hashedToken,
+  }).exec();
+
+  // 2. if no user => detect token reused
+  if (!user) {
+    // extract userId with decodeing without verifying
+    const hackedDecoded = decodeToken(currentRefreshToken);
+
+    // check if user exist => remove all token as may be hacked
+    if (hackedDecoded?.userId) {
+      await User.updateOne(
+        { _id: hackedDecoded.userId },
+        { $set: { refreshTokens: [] } }
+      );
+    }
+    // if decoded failed then its invalid
+    throw createUnauthorizedError(MESSAGES.AUTH.INVALID_TOKEN);
+  }
+  console.log(env.JWT.REFRESH_EXPIRE);
+  // 3. verify token - it already handled error
+  verifyRefreshToken(currentRefreshToken);
+
+  // 4. generate new access & refresh tokens
+  const accessToken = generateAccessToken({
+    userId: user._id,
+    roles: user.roles,
+  });
+  const refreshToken = generateRefreshToken({ userId: user._id });
+
+  // 5. remove used token + clean up expired tokens
+  user.refreshTokens = user.refreshTokens.filter(
+    (rt) => rt.token !== hashedToken && rt.expireAt > new Date()
+  );
+  // 6. hash new token and add it with expire date & save
+  const hashedNewToken = hashValue(refreshToken);
+  user.refreshTokens.push({
+    token: hashedNewToken,
+    expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE),
+  });
+  await user.save();
+
+  // 7. return tokens to controllers
+  return { accessToken, refreshToken };
+};
+
