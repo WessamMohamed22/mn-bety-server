@@ -1,3 +1,5 @@
+import authRouter from "../modules/auth/auth.routes.js";
+
 // ─── Route Handler
 // registers all app routes and handles unknown routes
 const routerHandler = (app) => {
@@ -7,6 +9,7 @@ const routerHandler = (app) => {
   });
 
   // ─── API Routes
+  app.use("/api/auth", authRouter);
 
   // ─── Unknown Route Handler
   app.use("/{*any}", (req, res) => {
