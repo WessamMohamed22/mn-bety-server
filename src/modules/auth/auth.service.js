@@ -27,31 +27,47 @@ import { hashValue, verifyPassword } from "../../utils/hash.util.js";
  */
 
 export const registerUser = async (userData) => {
-  // 1. check if email already used
-  const existUser = await User.findOne({ email: userData.email }).exec();
-  if (existUser) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
+  const { role, ...baseData } = userData;
 
-  // 2. create object_id for user
+  // 1. check if email already used
+  const emailExist = await User.findOne({ email: userData.email }).exec();
+  if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
+
+  // 2. validate role
+  const allowedRoles = [ROLES.CUSTOMER, ROLES.SELLER];
+  if (!allowedRoles.includes(role))
+    throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
+
+  // 3. create object_id for user
   const userId = new mongoose.Types.ObjectId();
 
-  // 3. generate access and refresh token
+  // 4. build roles array based on role
+  const roles =
+    role === ROLES.SELLER ? [ROLES.SELLER] : [ROLES.USER, ROLES.SELLER];
+
+  // 5. generate access and refresh token
   const accessToken = generateAccessToken({
     userId: userId,
-    roles: ROLES.USER,
+    roles: roles,
   });
   const refreshToken = generateRefreshToken({ userId });
 
-  // 4. hash new refresh token with expireAt in array
+  // 6. hash new refresh token with expireAt in array
   const hashedToken = hashValue(refreshToken);
   const refreshTokens = [
     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
   ];
-  // 5. create & save user in DB
-  const user = await User.create({ _id: userId, ...userData, refreshTokens });
+  // 7. create & save user in DB
+  const user = await User.create({
+    _id: userId,
+    ...baseData,
+    roles,
+    refreshTokens,
+  });
 
-  // 6. return safe user data + tokens
+  // 8. return safe user data + tokens
   return {
-    user: { userId: user._id, fullName: user.fullName, roles: user.roles },
+    user: { userId: user._id, fullName: user.fullName, roles },
     accessToken,
     refreshToken,
   };
@@ -208,4 +224,3 @@ export const refreshTokens = async (currentRefreshToken) => {
   // 7. return tokens to controllers
   return { accessToken, refreshToken };
 };
-
