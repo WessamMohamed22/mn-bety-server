@@ -41,7 +41,6 @@ const userSchema = new mongoose.Schema(
       maxlength: 500,
     },
     phone: { type: String, match: REGEX.PHONE },
-    address: String,
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     lastLogin: Date,
@@ -57,6 +56,12 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    address: {
+      street: { type: String, trim: true },
+      city: { type: String, trim: true },
+      country: { type: String, trim: true },
+      postalCode: { type: String, trim: true },
+    },
   },
   { timestamps: true }
 );
