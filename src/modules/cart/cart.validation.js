@@ -26,4 +26,13 @@ const validate = (schema , source = 'body') => (req, res, next) => {
         errors: error.details.map((d) => ({ field: d.path.join("."), message: d.message })),
         });
     }
+    Object.keys(req[source]).forEach((key) => delete req[source][key]);
+    Object.assign(req[source], value);
+    next();
 };
+
+// ─── Exported Middleware
+export const validateAddToCart = validate(schemas.addToCart, "body");
+export const validateUpdateQuantity = validate(schemas.updateQuantity, "body");
+export const validateProductIdParam = validate(schemas.params("productId"), "params");
+export const validateCartIdParam = validate(schemas.params("cartId"), "params");
