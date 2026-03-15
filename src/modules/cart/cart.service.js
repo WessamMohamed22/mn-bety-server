@@ -50,7 +50,36 @@ export const addToCart = async (userId, productId, quantity=1) => {
     } else {
         cart.items.push({ product: productId, quantity });
     }
-
     await cart.save();
     return cart;
 }
+
+/**
+ * @desc    Remove an item from the cart
+ * @param   {string} userId 
+ * @param   {string} productId 
+ */
+export const removeFromCart = async (userId, productId) => {
+  const cart = await Cart.findOne({ user: userId });
+  if (!cart) throw createNotFoundError("Cart not found");
+
+  cart.items = cart.items.filter(
+    (item) => item.product.toString() !== productId.toString()
+  );
+
+  await cart.save();
+  return cart;
+};
+
+/**
+ * @desc    Empty the entire cart
+ * @param   {string} userId 
+ */
+export const clearCart = async (userId) => {
+  const cart = await Cart.findOne({ user: userId });
+  if (cart) {
+    cart.items = [];
+    await cart.save();
+  }
+  return { message: "Cart cleared successfully" };
+};
