@@ -108,3 +108,35 @@ export const uploadCategoryImage = [
     next();
   }),
 ];
+
+
+
+//* ==================================================================
+
+/**
+ * @desc  Upload multiple product images to Cloudinary (max 5)
+ * @attaches req.uploadedImages = [{ url, publicId }]
+ * @field   productImages
+ */
+export const uploadProductImages = [
+  // Step 1 – parse multipart, hold files in memory
+  (req, res, next) => {
+    multerImage.array("productImages", 5)(req, res, (err) => {
+      if (err) return next(err);
+      next();
+    });
+  },
+
+  // Step 2 – stream each buffer to Cloudinary
+  asyncHandler(async (req, res, next) => {
+    if (!req.files || req.files.length === 0) return next();
+
+    req.uploadedImages = await Promise.all(
+      req.files.map((file) =>
+        streamToCloudinary(file.buffer, "products", file.originalname)
+      )
+    );
+
+    next();
+  }),
+];
