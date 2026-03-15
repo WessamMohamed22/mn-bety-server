@@ -1,5 +1,6 @@
 import authRouter from "../modules/auth/auth.routes.js";
 import categoryRouter from "../modules/category/category.routes.js";
+import productRouter from "../modules/product/product.routes.js";
 
 // ─── Route Handler
 // registers all app routes and handles unknown routes
@@ -12,6 +13,7 @@ const routerHandler = (app) => {
   // ─── API Routes
   app.use("/api/auth", authRouter);
   app.use("/api/categories", categoryRouter);
+  app.use("/api/products", productRouter);
   
 
   // ─── Unknown Route Handler
