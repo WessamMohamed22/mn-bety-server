@@ -75,8 +75,25 @@ export const MESSAGES = {
     HAS_CHILDREN: (count) =>
       `Cannot delete: this category has ${count} sub-categor${count === 1 ? "y" : "ies"}. Remove or re-assign them first.`,
   },
+  
   UPLOAD: {
   INVALID_IMAGE_TYPE: "Only JPEG, PNG and WebP images are allowed.",
   CLOUDINARY_FAILED:  "Failed to upload image. Please try again.",
+},
+
+PRODUCT: {
+  CREATED: "Product created successfully.",
+  UPDATED: "Product updated successfully.",
+  FETCHED: "Product fetched successfully.",
+  FETCHED_ALL: "Products fetched successfully.",
+  ACTIVATED: "Product is now active.",
+  DEACTIVATED: "Product is now inactive.",
+  APPROVED: "Product approved successfully.",
+  NOT_FOUND: "Product not found.",
+  NOT_OWNER: "You are not the owner of this product.",
+},
+
+SELLER: {
+  NOT_FOUND: "Seller profile not found.",
 },
 };
