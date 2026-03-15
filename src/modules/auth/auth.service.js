@@ -27,6 +27,57 @@ import { hashValue, verifyPassword } from "../../utils/hash.util.js";
  * @returns {Object} user, accessToken, refreshToken
  */
 
+// export const registerUser = async (userData) => {
+//   const { role, ...baseData } = userData;
+
+//   // 1. check if email already used
+//   const emailExist = await User.findOne({ email: userData.email }).exec();
+//   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
+
+//   // 2. validate role
+//   const allowedRoles = [ROLES.USER, ROLES.SELLER ,ROLES.ADMIN];
+//   if (!allowedRoles.includes(role))
+//     throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
+
+//   // 3. create object_id for user
+//   const userId = new mongoose.Types.ObjectId();
+
+//   // 4. build roles array based on role
+//   const roles =
+//     role === ROLES.SELLER ? [ROLES.SELLER] : [ROLES.USER, ROLES.SELLER];
+
+//   // 5. generate access and refresh token
+//   const accessToken = generateAccessToken({
+//     userId: userId,
+//     roles: roles,
+//   });
+//   const refreshToken = generateRefreshToken({ userId });
+
+//   // 6. hash new refresh token with expireAt in array
+//   const hashedToken = hashValue(refreshToken);
+//   const refreshTokens = [
+//     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
+//   ];
+//   // 7. create & save user in DB
+//   const user = await User.create({
+//     _id: userId,
+//     ...baseData,
+//     roles,
+//     refreshTokens,
+//   });
+
+//   // 8. return safe user data + tokens
+//   return {
+//     user: { userId: user._id, fullName: user.fullName, roles },
+//     accessToken,
+//     refreshToken,
+//   };
+// };
+
+// ------------------------------------------------------------
+
+
+
 export const registerUser = async (userData) => {
   const { role, ...baseData } = userData;
 
@@ -34,39 +85,40 @@ export const registerUser = async (userData) => {
   const emailExist = await User.findOne({ email: userData.email }).exec();
   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
 
-  // 2. validate role
-  const allowedRoles = [ROLES.USER, ROLES.SELLER];
+  const allowedRoles = Object.values(ROLES); 
   if (!allowedRoles.includes(role))
     throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
 
-  // 3. create object_id for user
   const userId = new mongoose.Types.ObjectId();
 
-  // 4. build roles array based on role
-  const roles =
-    role === ROLES.SELLER ? [ROLES.SELLER] : [ROLES.USER, ROLES.SELLER];
+  let roles;
+  if (role === ROLES.ADMIN) {
+    roles = [ROLES.ADMIN];     
+  } else if (role === ROLES.SELLER) {
+    roles = [ROLES.SELLER];
+  } else {
+    roles = [ROLES.USER];
+  }
 
-  // 5. generate access and refresh token
   const accessToken = generateAccessToken({
     userId: userId,
-    roles: roles,
+    roles: roles, 
   });
   const refreshToken = generateRefreshToken({ userId });
 
-  // 6. hash new refresh token with expireAt in array
   const hashedToken = hashValue(refreshToken);
-  const refreshTokens = [
+  
+  const userRefreshTokens = [
     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
   ];
-  // 7. create & save user in DB
+
   const user = await User.create({
     _id: userId,
     ...baseData,
     roles,
-    refreshTokens,
+    refreshTokens: userRefreshTokens, 
   });
 
-  // 8. return safe user data + tokens
   return {
     user: { userId: user._id, fullName: user.fullName, roles },
     accessToken,
@@ -74,8 +126,7 @@ export const registerUser = async (userData) => {
   };
 };
 
-// ------------------------------------------------------------
-
+//==========================================================================
 /**
  * @desc    Validate credentials and generate tokens
  * @param   {string} email    - User email address

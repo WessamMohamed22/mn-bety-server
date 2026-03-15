@@ -57,4 +57,26 @@ export const MESSAGES = {
     PASSWORD_RESET_SENT: "Password reset link sent to your email",
     PASSWORD_RESET_SUCCESS: "Password reset successfully",
   },
+
+  CATEGORY: {
+    CREATED: "Category created successfully.",
+    UPDATED: "Category updated successfully.",
+    FETCHED: "Category fetched successfully.",
+    FETCHED_ALL: "Categories fetched successfully.",
+    FETCHED_CHILDREN: "Child categories fetched successfully.",
+    ACTIVATED: "Category is now active.",
+    DEACTIVATED: "Category is now inactive.",
+    REORDERED: "Categories reordered successfully.",
+    NOT_FOUND: "Category not found.",
+    PARENT_NOT_FOUND: "Parent category not found.",
+    NAME_ALREADY_EXISTS: "A category with this name already exists.",
+    SELF_PARENT: "A category cannot be its own parent.",
+    // Dynamic – called as a function
+    HAS_CHILDREN: (count) =>
+      `Cannot delete: this category has ${count} sub-categor${count === 1 ? "y" : "ies"}. Remove or re-assign them first.`,
+  },
+  UPLOAD: {
+  INVALID_IMAGE_TYPE: "Only JPEG, PNG and WebP images are allowed.",
+  CLOUDINARY_FAILED:  "Failed to upload image. Please try again.",
+},
 };
