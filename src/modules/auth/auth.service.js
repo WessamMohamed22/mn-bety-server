@@ -12,6 +12,7 @@ import {
 import {
   createConflictError,
   createUnauthorizedError,
+  createBadRequestError, 
 } from "../../errors/error.factory.js";
 import { getExpiryDate } from "../../utils/date.util.js";
 import { hashValue, verifyPassword } from "../../utils/hash.util.js";
@@ -34,7 +35,7 @@ export const registerUser = async (userData) => {
   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
 
   // 2. validate role
-  const allowedRoles = [ROLES.CUSTOMER, ROLES.SELLER];
+  const allowedRoles = [ROLES.USER, ROLES.SELLER];
   if (!allowedRoles.includes(role))
     throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
 
