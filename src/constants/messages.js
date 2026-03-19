@@ -97,4 +97,17 @@ PRODUCT: {
 SELLER: {
   NOT_FOUND: "Seller profile not found.",
 },
+
+CART: {
+  FETCHED:             "Cart fetched successfully.",
+  ITEM_ADDED:          "Item added to cart successfully.",
+  ITEM_UPDATED:        "Cart item updated successfully.",
+  ITEM_REMOVED:        "Item removed from cart successfully.",
+  CLEARED:             "Cart cleared successfully.",
+  NOT_FOUND:           "Cart not found.",
+  ITEM_NOT_FOUND:      "Product is not in the cart.",
+  OUT_OF_STOCK:        (stock) => `Only ${stock} items left in stock.`,
+  STOCK_LIMIT:         (stock) => `Cannot add more. Stock limit: ${stock}.`,
+},
+
 };
