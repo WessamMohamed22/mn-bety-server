@@ -1,5 +1,5 @@
 import * as AuthService from "./auth.service.js";
-import asyncHandler from "../../middlewares/asynHandler.js";
+import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { HEADERS } from "../../constants/headers.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";

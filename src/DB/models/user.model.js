@@ -36,10 +36,6 @@ const userSchema = new mongoose.Schema(
       enum: Object.values(ROLES),
       default: [ROLES.USER],
     },
-    bio: {
-      type: String,
-      maxlength: 500,
-    },
     phone: { type: String, match: REGEX.PHONE },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
@@ -56,12 +52,6 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
-    address: {
-      street: { type: String, trim: true },
-      city: { type: String, trim: true },
-      country: { type: String, trim: true },
-      postalCode: { type: String, trim: true },
-    },
   },
   { timestamps: true }
 );
