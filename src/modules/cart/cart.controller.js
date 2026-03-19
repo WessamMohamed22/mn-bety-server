@@ -51,7 +51,10 @@ export const removeFromCart = asyncHandler(async (req, res) => {
 
 export const clearCart = asyncHandler(async (req, res) => {
   const userId = req.decoded.userId;
-  await CartService.clearCart(userId);
-
-  return res.status(HTTP_STATUS.NO_CONTENT).end();
+  const clearedCart = await CartService.clearCart(userId);
+  return res.status(HTTP_STATUS.OK).json({
+    status: "Success",
+    message: "Cart has been cleared successfully",
+    data: clearedCart
+  });
 });
