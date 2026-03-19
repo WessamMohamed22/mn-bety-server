@@ -61,6 +61,7 @@ export const MESSAGES = {
   CATEGORY: {
     CREATED: "Category created successfully.",
     UPDATED: "Category updated successfully.",
+    DELETED: "Category deleted successfully.",
     FETCHED: "Category fetched successfully.",
     FETCHED_ALL: "Categories fetched successfully.",
     FETCHED_CHILDREN: "Child categories fetched successfully.",

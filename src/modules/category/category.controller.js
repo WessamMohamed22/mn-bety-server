@@ -128,7 +128,9 @@ export const toggleCategoryStatus = asyncHandler(async (req, res) => {
 export const deleteCategory = asyncHandler(async (req, res) => {
   await CategoryService.deleteCategory(req.params.id);
 
-  return res.status(HTTP_STATUS.NO_CONTENT).end();
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse(null, MESSAGES.CATEGORY.DELETED));
 });
 
 // ------------------------------------------------------------
