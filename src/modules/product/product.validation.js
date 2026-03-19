@@ -1,4 +1,5 @@
 import Joi from "joi";
+import validate from "../../utils/validate.util.js";
 
 // ─── Reusable Bits ────────────────────────────────────────────────────────────
 const mongoId = Joi.string().hex().length(24).messages({
@@ -26,6 +27,7 @@ const schemas = {
     category: mongoId,
   }),
 
+  // Dynamic param schema — pass the param name e.g. params("sellerId")
   params: (name) => Joi.object({ [name]: mongoId.required() }),
 
   query: Joi.object({
@@ -36,44 +38,26 @@ const schemas = {
     minPrice: Joi.number().min(0),
     maxPrice: Joi.number().min(0),
     search: Joi.string().trim(),
-    sort: Joi.string().valid("price", "-price", "createdAt", "-createdAt", "rating", "-rating"),
+    sort: Joi.string().valid(
+      "price", "-price",
+      "createdAt", "-createdAt",
+      "rating", "-rating"
+    ),
     featured: Joi.boolean(),
   }).unknown(),
 };
 
-// ─── Middleware Factory ────────────────────────────────────────────────────────
-const validate = (schema, source = "body") => (req, res, next) => {
-  const target =
-    typeof schema === "function"
-      ? schema(Object.keys(req[source])[0])
-      : schema;
-
-  const { error, value } = target.validate(req[source], {
-    abortEarly: false,
-    stripUnknown: true,
-    convert: true,
-  });
-
-  if (error)
-    return res.status(422).json({
-      errors: error.details.map((d) => ({
-        field: d.path.join("."),
-        message: d.message,
-      })),
-    });
-
-  Object.keys(req[source]).forEach((key) => delete req[source][key]);
-  Object.assign(req[source], value);
-
-  next();
-};
-
 // ─── Exported Validators ──────────────────────────────────────────────────────
 export const validateCreateProduct = validate(schemas.create, "body");
+
+// Update needs both params (id) and body validation
 export const validateUpdateProduct = [
   validate(schemas.params("id"), "params"),
   validate(schemas.update, "body"),
 ];
+
+// Factory — call with param name e.g. validateMongoIdParam("sellerId")
 export const validateMongoIdParam = (name = "id") =>
   validate(schemas.params(name), "params");
+
 export const validateProductQuery = validate(schemas.query, "query");
