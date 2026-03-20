@@ -103,7 +103,17 @@ export const loginUser = async (email, password, currentRefreshToken) => {
     // if cookie exists but not in DB => token was already rotated
     // else so its old token => remove it + clean up any expired tokens
     if (!tokenInDB) {
-      user.refreshTokens = [];
+      const decoded = decodeToken(currentRefreshToken);
+      // check if token was generated before password change
+      // if generated after change:
+      // it may user token has been rotated - wipe all including
+      if (
+        !decoded?.iat ||
+        !user.passwordChangedAt ||
+        !user.changedPasswordAfter(decoded.iat)
+      ) {
+        user.refreshTokens = [];
+      }
     } else {
       user.refreshTokens = user.refreshTokens.filter(
         (rt) => rt.token !== currentHashedToken
@@ -154,8 +164,16 @@ export const logoutUser = async (refreshToken) => {
   const hashedToken = hashValue(refreshToken);
   const tokenInDB = user.refreshTokens.find((rt) => rt.token === hashedToken);
   if (!tokenInDB) {
-    // user has been hacked - wipe all
-    user.refreshTokens = [];
+    // check if token was generated before password change
+    // if generated after change:
+    // it may user token has been rotated - wipe all including
+    if (
+      !decoded?.iat ||
+      !user.passwordChangedAt ||
+      !user.changedPasswordAfter(decoded.iat)
+    ) {
+      user.refreshTokens = [];
+    }
   } else {
     // just remove token from user
     user.refreshTokens = user.refreshTokens.filter(
@@ -183,28 +201,33 @@ export const refreshTokens = async (currentRefreshToken) => {
   // if no user => detect token reused
   if (!user) {
     // extract userId with decodeing without verifying
-    const hackedDecoded = decodeToken(currentRefreshToken);
-
-    // check if user exist => remove all token as may be hacked
-    if (hackedDecoded?.userId) {
-      await User.updateOne(
-        { _id: hackedDecoded.userId },
-        { $set: { refreshTokens: [] } }
-      );
+    const decoded = decodeToken(currentRefreshToken);
+    if (decoded?.userId) {
+      const userTarget = await User.findById(decoded.userId).exec();
+      if (userTarget) {
+        // check if token was generated before password change
+        // if generated after change:
+        // its real reuse attack - wipe all including current device
+        if (
+          !userTarget.passwordChangedAt ||
+          !userTarget.changedPasswordAfter(decoded.iat)
+        ) {
+          userTarget.refreshTokens = [];
+          await userTarget.save();
+        }
+      }
     }
-    // if decoded failed then its invalid
+    // then force re-login
     throw createUnauthorizedError(MESSAGES.AUTH.INVALID_TOKEN);
   }
   // 3. verify token - it already handled error
   verifyRefreshToken(currentRefreshToken);
-
   // 4. generate new access & refresh tokens
   const accessToken = generateAccessToken({
     userId: user._id,
     roles: user.roles,
   });
   const refreshToken = generateRefreshToken({ userId: user._id });
-
   // 5. remove used token + clean up expired tokens
   user.refreshTokens = user.refreshTokens.filter(
     (rt) => rt.token !== hashedToken && rt.expireAt > new Date()
