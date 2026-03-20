@@ -1,5 +1,5 @@
 import * as CartService from "./cart.service.js";
-import asyncHandler from "../../middlewares/asynHandler.js";
+import asyncHandler from "../../middlewares/asyncHandler.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";
 import { successResponse } from "../../utils/apiResponse.util.js";
 
