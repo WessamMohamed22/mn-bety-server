@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema(
       match: [REGEX.PASSWORD, MESSAGES.VALIDATION.INVALID_EMAIL],
       required: true,
     },
+    passwordChangedAt: Date,
     avatar: {
       url: { type: String, default: "" },
       publicId: { type: String, default: "" },
@@ -38,7 +39,8 @@ const userSchema = new mongoose.Schema(
     },
     phone: { type: String, match: REGEX.PHONE },
     isActive: { type: Boolean, default: true },
-    isVerified: { type: Boolean, default: false },
+    emailVerified: { type: Boolean, default: false },
+    phoneVerified: { type: Boolean, default: false },
     lastLogin: Date,
     refreshTokens: [
       {
@@ -64,6 +66,25 @@ userSchema.pre("save", async function () {
   const result = await hashPassword(this.password);
   this.password = result;
 });
+
+// Track password change time
+userSchema.pre("save", function () {
+  if (!this.isModified("password") || this.isNew) return;
+  // subtract 1s to avoid JWT timing issues !!!
+  this.passwordChangedAt = Date.now() - 1000;
+});
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    // Convert milliseconds to seconds
+    // Because JWT iat is in seconds, not milliseconds
+    // Converts the result into an integer (base 10)
+    const changedTime = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    // true = password changed after token was issued
+    return JWTTimestamp < changedTime;
+  }
+  return false;
+};
 
 const User = mongoose.model.User || mongoose.model("User", userSchema);
 

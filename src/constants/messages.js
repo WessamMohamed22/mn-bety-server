@@ -14,6 +14,7 @@ export const MESSAGES = {
     LOGIN_SUCCESS: "Logged in successfully",
     LOGOUT_SUCCESS: "Logged out successfully",
     TOKEN_REFRESHED: "Token refreshed successfully",
+    SAME_PASSWORD: "New password must be different from your current password",
     PASSWORD_CHANGED: "Your password has been changed successfully.",
     PASSWORD_RESET_SUCCESS: "Password reset successful. Please login again.",
     INVALID_CURRENT_PASSWORD: "The current password you entered is incorrect.",
