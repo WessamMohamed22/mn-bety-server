@@ -20,6 +20,7 @@ import { JWT_ERRORS, MONGOOSE_ERRORS,MULTER_ERRORS } from "../constants/errorTyp
 
 
 export const errorHandler = (err, req, res, next) => {
+  //  console.log("ERROR CODE:", err.code)  
   // use shallow copy
   let error = { ...err };
   console.log(err)
@@ -61,11 +62,13 @@ export const errorHandler = (err, req, res, next) => {
     error.statusCode = HTTP_STATUS.UNAUTHORIZED;
     error.message = MESSAGES.AUTH.TOKEN_EXPIRED;
   }
-
-  // Multer: Unexpected field
+  
+// Multer: Unexpected field OR too many files
 if (err.code === MULTER_ERRORS.LIMIT_UNEXPECTED_FILE) {
   error.statusCode = HTTP_STATUS.BAD_REQUEST;
-  error.message = `Unexpected field: ${err.field}`;
+  error.message = err.field === "productImages" 
+    ? MESSAGES.UPLOAD.MAX_IMAGES 
+    : `Unexpected field: ${err.field}`;
 }
 
   res.status(error.statusCode).json({

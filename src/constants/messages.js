@@ -98,6 +98,7 @@ export const MESSAGES = {
   UPLOAD: {
     INVALID_IMAGE_TYPE: "Only JPEG, PNG and WebP images are allowed.",
     CLOUDINARY_FAILED: "Failed to upload image. Please try again.",
+    MAX_IMAGES: "You can upload a maximum of 5 images per product.",
   },
 
 PRODUCT: {

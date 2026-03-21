@@ -219,6 +219,11 @@ export const updateProduct = async (id, data, images = [], userId) => {
 
  // 6.  if new images uploaded, delete old ones first then replace
   if (images.length > 0) {
+      // check total images won't exceed 5
+    if (images.length > 5) {
+      throw createBadRequestError("You can upload a maximum of 5 images per product.");
+    }
+
     // delete old images from Cloudinary
     if (product.images.length > 0) {
       await Promise.all(
