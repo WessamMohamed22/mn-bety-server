@@ -91,6 +91,7 @@ PRODUCT: {
   APPROVED: "Product approved successfully.",
   NOT_FOUND: "Product not found.",
   NOT_OWNER: "You are not the owner of this product.",
+  PARENT_CATEGORY_NOT_ALLOWED: "Products can only be added to sub-categories, not main categories.",
 },
 
 SELLER: {

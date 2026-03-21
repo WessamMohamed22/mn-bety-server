@@ -13,7 +13,12 @@ const schemas = {
     name: Joi.string().trim().min(2).max(100).required(),
     description: Joi.string().trim().min(10).max(2000).required(),
     price: Joi.number().min(0).required(),
-    discountPrice: Joi.number().min(0).default(0),
+    discountPrice: Joi.number().min(0).default(0)
+      .when("price", {
+        is: Joi.number().greater(0),
+        then: Joi.number().less(Joi.ref("price"))
+          .messages({ "number.less": "Discount price must be less than the original price" }),
+      }),
     stock: Joi.number().integer().min(0).required(),
     category: mongoId.required(),
   }),
@@ -22,7 +27,12 @@ const schemas = {
     name: Joi.string().trim().min(2).max(100),
     description: Joi.string().trim().min(10).max(2000),
     price: Joi.number().min(0),
-    discountPrice: Joi.number().min(0),
+     discountPrice: Joi.number().min(0)
+      .when("price", {
+        is: Joi.number().greater(0),
+        then: Joi.number().less(Joi.ref("price"))
+          .messages({ "number.less": "Discount price must be less than the original price" }),
+      }),
     stock: Joi.number().integer().min(0),
     category: mongoId,
   }),

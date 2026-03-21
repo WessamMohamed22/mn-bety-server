@@ -1,6 +1,7 @@
 import slugify from "slugify";
 import Product from "../../DB/models/product.model.js";
 import Seller from "../../DB/models/saller.model.js";
+import Category from "../../DB/models/category.model.js";
 import { MESSAGES } from "../../constants/messages.js";
 import {
   createBadRequestError,
@@ -21,6 +22,35 @@ const generateUniqueSlug = async (name, excludeId = null) => {
   return slug;
 };
 
+// ─── Helper: ensure category is a leaf (has no children) ──────────────────────
+const ensureLeafCategory = async (categoryId) => {
+  const category = await Category.findById(categoryId).exec();
+  if (!category) throw createNotFoundError(MESSAGES.CATEGORY.NOT_FOUND);
+
+  const childrenCount = await Category.countDocuments({ parent: categoryId });
+  if (childrenCount > 0)
+    throw createBadRequestError(MESSAGES.PRODUCT.PARENT_CATEGORY_NOT_ALLOWED);
+
+  return category;
+};
+
+// ─── Helper: get category IDs (self + all children) ───────────────────────────
+const getCategoryWithChildren = async (categoryId) => {
+  // get all direct children
+  const children = await Category.find({ parent: categoryId }).select("_id").exec();
+  
+  // if no children, just return the category itself
+  if (children.length === 0) return [categoryId];
+  
+  // recursively get children of children
+  const childIds = await Promise.all(
+    children.map((child) => getCategoryWithChildren(child._id))
+  );
+  
+  // flatten and include self
+  return [categoryId, ...childIds.flat()];
+};
+
 // ─── Create Product ───────────────────────────────────────────────────────────
 /**
  * @desc    Create a new product under the authenticated seller
@@ -34,10 +64,13 @@ export const createProduct = async (data, images = [], userId) => {
   const seller = await Seller.findOne({ user: userId }).exec();
   if (!seller) throw createBadRequestError(MESSAGES.SELLER.NOT_FOUND);
 
-  // 2. generate unique slug
+  // 2. ensure category is a leaf
+  const category = await ensureLeafCategory(data.category);
+
+  // 3. generate unique slug
   const slug = await generateUniqueSlug(data.name);
 
-  // 3. create & save product
+  // 4. create & save product
   const product = await Product.create({
     ...data,
     slug,
@@ -71,7 +104,10 @@ export const getAllProducts = async (query) => {
   // 1. build filter — public only sees approved + active products
   const filter = { isApproved: true, isActive: true };
 
-  if (category) filter.category = category;
+   if (category) {
+    const categoryIds = await getCategoryWithChildren(category);
+    filter.category = { $in: categoryIds };
+  }
   if (seller) filter.seller = seller;
   if (featured !== undefined) filter.isFeatured = featured;
   if (minPrice !== undefined || maxPrice !== undefined) {
@@ -165,17 +201,22 @@ export const updateProduct = async (id, data, images = [], userId) => {
     throw createForbiddenError(MESSAGES.PRODUCT.NOT_OWNER);
   }
 
-  // 3. re-generate slug only when name changes
+  // 3. if category is being changed, ensure new one is a leaf ← NEW
+  if (data.category && String(data.category) !== String(product.category)) {
+    await ensureLeafCategory(data.category);
+  }
+
+  // 4. re-generate slug only when name changes
   if (data.name && data.name.toLowerCase().trim() !== product.name) {
     product.slug = await generateUniqueSlug(data.name, id);
     product.name = data.name;
     delete data.name;
   }
 
-  // 4. apply remaining fields
+  // 5. apply remaining fields
   Object.assign(product, data);
 
-  // 5. append new images if uploaded
+  // 6. append new images if uploaded
   if (images.length > 0) {
     product.images.push(...images);
   }
