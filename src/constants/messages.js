@@ -127,4 +127,14 @@ export const MESSAGES = {
     OUT_OF_STOCK: (stock) => `Only ${stock} items left in stock.`,
     STOCK_LIMIT: (stock) => `Cannot add more. Stock limit: ${stock}.`,
   },
+  REVIEW: {
+  CREATED: "Review submitted successfully.",
+  UPDATED: "Review updated successfully.",
+  DELETED: "Review deleted successfully.",
+  FETCHED: "Review fetched successfully.",
+  FETCHED_ALL: "Reviews fetched successfully.",
+  NOT_FOUND: "Review not found.",
+  NOT_OWNER: "You are not allowed to modify this review.",
+  ALREADY_REVIEWED: "You have already reviewed this product.",
+},
 };
