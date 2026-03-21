@@ -3,6 +3,7 @@ import Product from "../../DB/models/product.model.js";
 import Seller from "../../DB/models/saller.model.js";
 import Category from "../../DB/models/category.model.js";
 import { MESSAGES } from "../../constants/messages.js";
+import { deleteFromCloudinary } from "../../middlewares/upload.middleware.js"; 
 import {
   createBadRequestError,
   createForbiddenError,
@@ -244,6 +245,12 @@ export const deleteProduct = async (id, userId, roles) => {
     if (!seller || String(product.seller) !== String(seller._id)) {
       throw createForbiddenError(MESSAGES.PRODUCT.NOT_OWNER);
     }
+  }
+   //  delete all images from Cloudinary before removing product
+  if (product.images.length > 0) {
+    await Promise.all(
+      product.images.map((img) => deleteFromCloudinary(img.publicId))
+    );
   }
 
   await product.deleteOne();
