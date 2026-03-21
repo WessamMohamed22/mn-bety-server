@@ -100,17 +100,18 @@ export const MESSAGES = {
     CLOUDINARY_FAILED: "Failed to upload image. Please try again.",
   },
 
-  PRODUCT: {
-    CREATED: "Product created successfully.",
-    UPDATED: "Product updated successfully.",
-    FETCHED: "Product fetched successfully.",
-    FETCHED_ALL: "Products fetched successfully.",
-    ACTIVATED: "Product is now active.",
-    DEACTIVATED: "Product is now inactive.",
-    APPROVED: "Product approved successfully.",
-    NOT_FOUND: "Product not found.",
-    NOT_OWNER: "You are not the owner of this product.",
-  },
+PRODUCT: {
+  CREATED: "Product created successfully.",
+  UPDATED: "Product updated successfully.",
+  FETCHED: "Product fetched successfully.",
+  FETCHED_ALL: "Products fetched successfully.",
+  ACTIVATED: "Product is now active.",
+  DEACTIVATED: "Product is now inactive.",
+  APPROVED: "Product approved successfully.",
+  NOT_FOUND: "Product not found.",
+  NOT_OWNER: "You are not the owner of this product.",
+  PARENT_CATEGORY_NOT_ALLOWED: "Products can only be added to sub-categories, not main categories.",
+},
 
   SELLER: {
     NOT_FOUND: "Seller profile not found.",
