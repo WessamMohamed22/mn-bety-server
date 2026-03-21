@@ -14,6 +14,10 @@ export const MESSAGES = {
     LOGIN_SUCCESS: "Logged in successfully",
     LOGOUT_SUCCESS: "Logged out successfully",
     TOKEN_REFRESHED: "Token refreshed successfully",
+    SAME_PASSWORD: "New password must be different from your current password",
+    PASSWORD_CHANGED: "Your password has been changed successfully.",
+    PASSWORD_RESET_SUCCESS: "Password reset successful. Please login again.",
+    INVALID_CURRENT_PASSWORD: "The current password you entered is incorrect.",
 
     // 401 - authentication errors
     LOGIN_FAILED: "Invalid email or password",
@@ -21,6 +25,7 @@ export const MESSAGES = {
     INVALID_TOKEN: "Invalid or expired token",
     TOKEN_EXPIRED: "Token has expired",
     TOKEN_FAILED: "Token verification failed",
+    INVALID_RESET_TOKEN: "Reset token is invalid or expired.",
     NO_PERMISSION: "You do not have permission to access this resource",
   },
 
@@ -31,6 +36,17 @@ export const MESSAGES = {
     UPDATED: "User updated successfully",
     DELETED: "User deleted successfully",
     PASSWORD_CHANGED: "Password changed successfully",
+  },
+
+  EMAIL: {
+    WELCOME_SENT: "Welcome email sent successfully.",
+    VERIFICATION_SENT: "Verification email sent. Please check your inbox.",
+    RESET_LINK_SENT: "Password reset link sent to your email.",
+
+    SEND_FAILED: "Failed to send email. Please try again later.",
+    PROVIDER_OFFLINE: "Email service is temporarily unavailable.",
+    INVALID_RECIPIENT: "Cannot send email to an invalid address.",
+    AUTH_FAILED: "Email service configuration error.",
   },
 
   SUCCESS: {
@@ -61,6 +77,7 @@ export const MESSAGES = {
   CATEGORY: {
     CREATED: "Category created successfully.",
     UPDATED: "Category updated successfully.",
+    DELETED: "Category deleted successfully.",
     FETCHED: "Category fetched successfully.",
     FETCHED_ALL: "Categories fetched successfully.",
     FETCHED_CHILDREN: "Child categories fetched successfully.",
@@ -73,13 +90,15 @@ export const MESSAGES = {
     SELF_PARENT: "A category cannot be its own parent.",
     // Dynamic – called as a function
     HAS_CHILDREN: (count) =>
-      `Cannot delete: this category has ${count} sub-categor${count === 1 ? "y" : "ies"}. Remove or re-assign them first.`,
+      `Cannot delete: this category has ${count} sub-categor${
+        count === 1 ? "y" : "ies"
+      }. Remove or re-assign them first.`,
   },
-  
+
   UPLOAD: {
-  INVALID_IMAGE_TYPE: "Only JPEG, PNG and WebP images are allowed.",
-  CLOUDINARY_FAILED:  "Failed to upload image. Please try again.",
-},
+    INVALID_IMAGE_TYPE: "Only JPEG, PNG and WebP images are allowed.",
+    CLOUDINARY_FAILED: "Failed to upload image. Please try again.",
+  },
 
 PRODUCT: {
   CREATED: "Product created successfully.",
@@ -94,7 +113,19 @@ PRODUCT: {
   PARENT_CATEGORY_NOT_ALLOWED: "Products can only be added to sub-categories, not main categories.",
 },
 
-SELLER: {
-  NOT_FOUND: "Seller profile not found.",
-},
+  SELLER: {
+    NOT_FOUND: "Seller profile not found.",
+  },
+
+  CART: {
+    FETCHED: "Cart fetched successfully.",
+    ITEM_ADDED: "Item added to cart successfully.",
+    ITEM_UPDATED: "Cart item updated successfully.",
+    ITEM_REMOVED: "Item removed from cart successfully.",
+    CLEARED: "Cart cleared successfully.",
+    NOT_FOUND: "Cart not found.",
+    ITEM_NOT_FOUND: "Product is not in the cart.",
+    OUT_OF_STOCK: (stock) => `Only ${stock} items left in stock.`,
+    STOCK_LIMIT: (stock) => `Cannot add more. Stock limit: ${stock}.`,
+  },
 };

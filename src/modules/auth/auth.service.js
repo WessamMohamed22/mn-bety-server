@@ -10,9 +10,9 @@ import {
   verifyRefreshToken,
 } from "../../services/token.service.js";
 import {
+  createBadRequestError,
   createConflictError,
   createUnauthorizedError,
-  createBadRequestError, 
 } from "../../errors/error.factory.js";
 import { getExpiryDate } from "../../utils/date.util.js";
 import { hashValue, verifyPassword } from "../../utils/hash.util.js";
@@ -27,57 +27,6 @@ import { hashValue, verifyPassword } from "../../utils/hash.util.js";
  * @returns {Object} user, accessToken, refreshToken
  */
 
-// export const registerUser = async (userData) => {
-//   const { role, ...baseData } = userData;
-
-//   // 1. check if email already used
-//   const emailExist = await User.findOne({ email: userData.email }).exec();
-//   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
-
-//   // 2. validate role
-//   const allowedRoles = [ROLES.USER, ROLES.SELLER ,ROLES.ADMIN];
-//   if (!allowedRoles.includes(role))
-//     throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
-
-//   // 3. create object_id for user
-//   const userId = new mongoose.Types.ObjectId();
-
-//   // 4. build roles array based on role
-//   const roles =
-//     role === ROLES.SELLER ? [ROLES.SELLER] : [ROLES.USER, ROLES.SELLER];
-
-//   // 5. generate access and refresh token
-//   const accessToken = generateAccessToken({
-//     userId: userId,
-//     roles: roles,
-//   });
-//   const refreshToken = generateRefreshToken({ userId });
-
-//   // 6. hash new refresh token with expireAt in array
-//   const hashedToken = hashValue(refreshToken);
-//   const refreshTokens = [
-//     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
-//   ];
-//   // 7. create & save user in DB
-//   const user = await User.create({
-//     _id: userId,
-//     ...baseData,
-//     roles,
-//     refreshTokens,
-//   });
-
-//   // 8. return safe user data + tokens
-//   return {
-//     user: { userId: user._id, fullName: user.fullName, roles },
-//     accessToken,
-//     refreshToken,
-//   };
-// };
-
-// ------------------------------------------------------------
-
-
-
 export const registerUser = async (userData) => {
   const { role, ...baseData } = userData;
 
@@ -85,40 +34,39 @@ export const registerUser = async (userData) => {
   const emailExist = await User.findOne({ email: userData.email }).exec();
   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
 
-  const allowedRoles = Object.values(ROLES); 
+  // 2. validate role
+  const allowedRoles = [ROLES.USER, ROLES.SELLER];
   if (!allowedRoles.includes(role))
     throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
 
+  // 3. create object_id for user
   const userId = new mongoose.Types.ObjectId();
 
-  let roles;
-  if (role === ROLES.ADMIN) {
-    roles = [ROLES.ADMIN];     
-  } else if (role === ROLES.SELLER) {
-    roles = [ROLES.SELLER];
-  } else {
-    roles = [ROLES.USER];
-  }
+  // 4. build roles array based on role
+  const roles =
+    role === ROLES.SELLER ? [ROLES.SELLER] : [ROLES.USER, ROLES.SELLER];
 
+  // 5. generate access and refresh token
   const accessToken = generateAccessToken({
     userId: userId,
-    roles: roles, 
+    roles: roles,
   });
   const refreshToken = generateRefreshToken({ userId });
 
+  // 6. hash new refresh token with expireAt in array
   const hashedToken = hashValue(refreshToken);
-  
-  const userRefreshTokens = [
+  const refreshTokens = [
     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
   ];
-
+  // 7. create & save user in DB
   const user = await User.create({
     _id: userId,
     ...baseData,
     roles,
-    refreshTokens: userRefreshTokens, 
+    refreshTokens,
   });
 
+  // 8. return safe user data + tokens
   return {
     user: { userId: user._id, fullName: user.fullName, roles },
     accessToken,
@@ -126,7 +74,8 @@ export const registerUser = async (userData) => {
   };
 };
 
-//==========================================================================
+// ------------------------------------------------------------
+
 /**
  * @desc    Validate credentials and generate tokens
  * @param   {string} email    - User email address
@@ -140,12 +89,10 @@ export const loginUser = async (email, password, currentRefreshToken) => {
   // 2. validate password
   const validPwd = await verifyPassword(password, user.password);
   if (!validPwd) throw createUnauthorizedError(MESSAGES.AUTH.LOGIN_FAILED);
-
   // 3. clean up expire tokens first !!!!!
   user.refreshTokens = user.refreshTokens.filter(
     (rt) => rt.expireAt > new Date()
   );
-
   // 4. handle existing refresh token cookie
   if (currentRefreshToken) {
     // hash token to find it
@@ -156,14 +103,23 @@ export const loginUser = async (email, password, currentRefreshToken) => {
     // if cookie exists but not in DB => token was already rotated
     // else so its old token => remove it + clean up any expired tokens
     if (!tokenInDB) {
-      user.refreshTokens = [];
+      const decoded = decodeToken(currentRefreshToken);
+      // check if token was generated before password change
+      // if generated after change:
+      // it may user token has been rotated - wipe all including
+      if (
+        !decoded?.iat ||
+        !user.passwordChangedAt ||
+        !user.changedPasswordAfter(decoded.iat)
+      ) {
+        user.refreshTokens = [];
+      }
     } else {
       user.refreshTokens = user.refreshTokens.filter(
         (rt) => rt.token !== currentHashedToken
       );
     }
   }
-
   // 5. generate access and refresh token
   const accessToken = generateAccessToken({
     userId: user._id,
@@ -208,8 +164,16 @@ export const logoutUser = async (refreshToken) => {
   const hashedToken = hashValue(refreshToken);
   const tokenInDB = user.refreshTokens.find((rt) => rt.token === hashedToken);
   if (!tokenInDB) {
-    // user has been hacked - wipe all
-    user.refreshTokens = [];
+    // check if token was generated before password change
+    // if generated after change:
+    // it may user token has been rotated - wipe all including
+    if (
+      !decoded?.iat ||
+      !user.passwordChangedAt ||
+      !user.changedPasswordAfter(decoded.iat)
+    ) {
+      user.refreshTokens = [];
+    }
   } else {
     // just remove token from user
     user.refreshTokens = user.refreshTokens.filter(
@@ -234,33 +198,36 @@ export const refreshTokens = async (currentRefreshToken) => {
   const user = await User.findOne({
     "refreshTokens.token": hashedToken,
   }).exec();
-
-  // 2. if no user => detect token reused
+  // if no user => detect token reused
   if (!user) {
     // extract userId with decodeing without verifying
-    const hackedDecoded = decodeToken(currentRefreshToken);
-
-    // check if user exist => remove all token as may be hacked
-    if (hackedDecoded?.userId) {
-      await User.updateOne(
-        { _id: hackedDecoded.userId },
-        { $set: { refreshTokens: [] } }
-      );
+    const decoded = decodeToken(currentRefreshToken);
+    if (decoded?.userId) {
+      const userTarget = await User.findById(decoded.userId).exec();
+      if (userTarget) {
+        // check if token was generated before password change
+        // if generated after change:
+        // its real reuse attack - wipe all including current device
+        if (
+          !userTarget.passwordChangedAt ||
+          !userTarget.changedPasswordAfter(decoded.iat)
+        ) {
+          userTarget.refreshTokens = [];
+          await userTarget.save();
+        }
+      }
     }
-    // if decoded failed then its invalid
+    // then force re-login
     throw createUnauthorizedError(MESSAGES.AUTH.INVALID_TOKEN);
   }
-  console.log(env.JWT.REFRESH_EXPIRE);
   // 3. verify token - it already handled error
   verifyRefreshToken(currentRefreshToken);
-
   // 4. generate new access & refresh tokens
   const accessToken = generateAccessToken({
     userId: user._id,
     roles: user.roles,
   });
   const refreshToken = generateRefreshToken({ userId: user._id });
-
   // 5. remove used token + clean up expired tokens
   user.refreshTokens = user.refreshTokens.filter(
     (rt) => rt.token !== hashedToken && rt.expireAt > new Date()
@@ -275,4 +242,42 @@ export const refreshTokens = async (currentRefreshToken) => {
 
   // 7. return tokens to controllers
   return { accessToken, refreshToken };
+};
+// ------------------------------------------------------------
+
+/**
+ * Changes the password for an already authenticated user.
+ * @param {string} userId
+ * @param {string} currentPassword
+ * @param {string} newPassword
+ * @param {string} refreshToken
+ */
+export const changePassword = async (
+  userId,
+  currentPassword,
+  newPassword,
+  refreshToken
+) => {
+  // 1. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
+  // 2. verify current password
+  const valid = await verifyPassword(currentPassword, user.password);
+  if (!valid)
+    throw createUnauthorizedError(MESSAGES.AUTH.INVALID_CURRENT_PASSWORD);
+  // 3. make sure new password is not same as old one
+  const isSame = await verifyPassword(newPassword, user.password);
+  if (isSame) throw createBadRequestError(MESSAGES.AUTH.SAME_PASSWORD);
+  // 4. add newPassword in user and remember it will hash in model !!!
+  user.password = newPassword;
+  // 5. invalidate all refresh tokens for security except the current device !!!
+  let currentHashToken;
+  if (refreshToken) {
+    currentHashToken = hashValue(refreshToken);
+  }
+  user.refreshTokens = currentHashToken
+    ? user.refreshTokens.filter((rtoken) => rtoken.token === currentHashToken)
+    : [];
+  // 6. save changes in DB
+  await user.save();
 };

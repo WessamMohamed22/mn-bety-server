@@ -1,7 +1,7 @@
 import multer from "multer";
 import { Readable } from "stream";
 import cloudinary from "../config/cloudinary.js";
-import asyncHandler from "./asynHandler.js";
+import asyncHandler from "./asyncHandler.js";
 import { createBadRequestError } from "../errors/error.factory.js";
 import { MESSAGES } from "../constants/messages.js";
 

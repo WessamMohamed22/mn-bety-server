@@ -1,5 +1,5 @@
 import * as CategoryService from "./category.service.js";
-import asyncHandler from "../../middlewares/asynHandler.js";
+import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";
 import {
@@ -128,7 +128,9 @@ export const toggleCategoryStatus = asyncHandler(async (req, res) => {
 export const deleteCategory = asyncHandler(async (req, res) => {
   await CategoryService.deleteCategory(req.params.id);
 
-  return res.status(HTTP_STATUS.NO_CONTENT).end();
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse(null, MESSAGES.CATEGORY.DELETED));
 });
 
 // ------------------------------------------------------------
