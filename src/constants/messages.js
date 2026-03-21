@@ -129,4 +129,14 @@ PRODUCT: {
     OUT_OF_STOCK: (stock) => `Only ${stock} items left in stock.`,
     STOCK_LIMIT: (stock) => `Cannot add more. Stock limit: ${stock}.`,
   },
+
+  WISHLIST: {
+  FETCHED: "Wishlist fetched successfully.",
+  ITEM_ADDED: "Product added to wishlist.",
+  ITEM_REMOVED: "Product removed from wishlist.",
+  CLEARED: "Wishlist cleared successfully.",
+  NOT_FOUND: "Wishlist not found.",
+  ITEM_NOT_FOUND: "Product is not in the wishlist.",
+  ALREADY_EXISTS: "Product is already in your wishlist.",
+},
 };
