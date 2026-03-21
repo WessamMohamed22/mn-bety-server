@@ -217,9 +217,16 @@ export const updateProduct = async (id, data, images = [], userId) => {
   // 5. apply remaining fields
   Object.assign(product, data);
 
-  // 6. append new images if uploaded
+ // 6.  if new images uploaded, delete old ones first then replace
   if (images.length > 0) {
-    product.images.push(...images);
+    // delete old images from Cloudinary
+    if (product.images.length > 0) {
+      await Promise.all(
+        product.images.map((img) => deleteFromCloudinary(img.publicId))
+      );
+    }
+    // replace with new images
+    product.images = images;
   }
 
   await product.save();
