@@ -139,4 +139,27 @@ export const uploadProductImages = [
 
     next();
   }),
+  
+];
+// ------------------------------------------------------------
+
+/**
+ * @desc  Upload a single avatar image to Cloudinary
+ * @attaches req.uploadedImage = { url, publicId }
+ * @field   avatar
+ */
+export const uploadAvatarImage = [
+  multerImage.single("avatar"),
+
+  asyncHandler(async (req, res, next) => {
+    if (!req.file) return next();
+
+    req.uploadedImage = await streamToCloudinary(
+      req.file.buffer,
+      "avatars",
+      req.file.originalname
+    );
+
+    next();
+  }),
 ];
