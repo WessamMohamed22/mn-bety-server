@@ -1,3 +1,4 @@
+
 export const MESSAGES = {
   VALIDATION: {
     INVALID_EMAIL: "Please provide a valid email address",
@@ -148,4 +149,4 @@ PRODUCT: {
   NOT_OWNER: "You are not allowed to modify this review.",
   ALREADY_REVIEWED: "You have already reviewed this product.",
 },
-};
+}};
