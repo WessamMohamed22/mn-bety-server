@@ -1,4 +1,4 @@
-import asyncHandler from "./middleware/asynHandler.js";
+import asyncHandler from "./asyncHandler.js";
 import { HEADERS } from "../constants/headers.js";
 import { MESSAGES } from "../constants/messages.js";
 import { createUnauthorizedError } from "../errors/error.factory.js";
