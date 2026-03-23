@@ -48,9 +48,6 @@ const Customer =
   mongoose.models.Customer || mongoose.model("Customer", customerSchema);
 
 export default Customer;
-```
-
----
 
 // ### 🔄 العلاقة بين الاتنين:
 // ```
