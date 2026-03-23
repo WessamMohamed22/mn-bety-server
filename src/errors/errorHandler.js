@@ -16,9 +16,11 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { env } from "../config/env.js";
 import { MESSAGES } from "../constants/messages.js";
-import { JWT_ERRORS, MONGOOSE_ERRORS } from "../constants/errorTypes.js";
+import { JWT_ERRORS, MONGOOSE_ERRORS,MULTER_ERRORS } from "../constants/errorTypes.js";
+
 
 export const errorHandler = (err, req, res, next) => {
+  //  console.log("ERROR CODE:", err.code)  
   // use shallow copy
   let error = { ...err };
   console.log(err)
@@ -60,6 +62,14 @@ export const errorHandler = (err, req, res, next) => {
     error.statusCode = HTTP_STATUS.UNAUTHORIZED;
     error.message = MESSAGES.AUTH.TOKEN_EXPIRED;
   }
+  
+// Multer: Unexpected field OR too many files
+if (err.code === MULTER_ERRORS.LIMIT_UNEXPECTED_FILE) {
+  error.statusCode = HTTP_STATUS.BAD_REQUEST;
+  error.message = err.field === "productImages" 
+    ? MESSAGES.UPLOAD.MAX_IMAGES 
+    : `Unexpected field: ${err.field}`;
+}
 
   res.status(error.statusCode).json({
     success: false,

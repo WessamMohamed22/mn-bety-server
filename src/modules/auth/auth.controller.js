@@ -1,5 +1,5 @@
 import * as AuthService from "./auth.service.js";
-import asyncHandler from "../../middlewares/asynHandler.js";
+import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { HEADERS } from "../../constants/headers.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";
@@ -11,7 +11,10 @@ import {
   createdResponse,
   successResponse,
 } from "../../utils/apiResponse.util.js";
-import { createBadRequestError, createUnauthorizedError } from "../../errors/error.factory.js";
+import {
+  createBadRequestError,
+  createUnauthorizedError,
+} from "../../errors/error.factory.js";
 
 // ============================================================
 //                      AUTH CONTROLLER
@@ -117,4 +120,31 @@ export const refreshToken = asyncHandler(async (req, res) => {
 
   // 5. return new access token to client
   res.json(createdResponse(accessToken, MESSAGES.AUTH.TOKEN_REFRESHED));
+});
+// ------------------------------------------------------------
+
+/**
+ * @desc    Change password for authenticated user
+ * @route   PATCH /api/auth/change-password
+ * @access  Private
+ */
+
+export const changePassword = asyncHandler(async (req, res) => {
+  // 1. validate current and new password in body
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword)
+    throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+  // 2. get refresh token if exists in cookie
+  const refreshToken = req.cookies?.[HEADERS.REFRESH_TOKEN];
+  // 3. change password service
+  await AuthService.changePassword(
+    req.decoded.userId,
+    currentPassword,
+    newPassword,
+    refreshToken
+  );
+  // 4. clear refresh token cookie since all sessions are invalidated
+  res.clearCookie(HEADERS.REFRESH_TOKEN, getClearCookieConfig());
+  // 5. return success
+  return res.json(successResponse(null, MESSAGES.AUTH.PASSWORD_CHANGED));
 });
