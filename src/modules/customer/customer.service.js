@@ -1,3 +1,4 @@
+import Customer from "../../DB/models/customer.model.js";
 import User from "../../DB/models/user.model.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { deleteFromCloudinary } from "../../middlewares/upload.middleware.js";
@@ -8,29 +9,49 @@ import {
   createBadRequestError,
 } from "../../errors/error.factory.js";
 
-// ─── Safe user fields to return to client ────────────────────────────────────
-const safeFields = "-password -refreshTokens -__v";
+// ─── Helper: get user + customer and merge them ───────────────────────────────
+const getFullProfile = async (userId) => {
+  const user = await User.findById(userId)
+    .select("-password -refreshTokens -__v")
+    .exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  const customer = await Customer.findOne({ user: userId })
+    .select("-__v -user")
+    .exec();
+
+  // merge user + customer into one clean object
+  return {
+    _id:       user._id,
+    email:     user.email,
+    roles:     user.roles,
+    isActive:  user.isActive,
+    createdAt: user.createdAt,
+    // customer fields (fallback to empty if profile not created yet)
+    fullName: customer?.fullName ?? user.fullName,
+    phone:    customer?.phone    ?? "",
+    bio:      customer?.bio      ?? "",
+    avatar:   customer?.avatar   ?? { url: "", publicId: "" },
+    location: customer?.location ?? { city: "", address: "" },
+  };
+};
 
 // ============================================================
-//                    USER (SELF) SERVICES
+//                  CUSTOMER (SELF) SERVICES
 // ============================================================
 
 /**
- * @desc    Get my profile
+ * @desc    Get my full profile (user + customer merged)
  */
 export const getMe = async (userId) => {
-  const user = await User.findById(userId)
-    .select(safeFields)
-    .exec();
-
-  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
-  return user;
+  return await getFullProfile(userId);
 };
 
 // ------------------------------------------------------------
 
 /**
- * @desc    Update my profile (fullName, bio, phone, location)
+ * @desc    Update my profile (upsert customer doc)
+ * fields:  fullName, bio, phone, city, address
  */
 export const updateMe = async (userId, data) => {
   const user = await User.findById(userId).exec();
@@ -38,16 +59,22 @@ export const updateMe = async (userId, data) => {
 
   const { fullName, bio, phone, city, address } = data;
 
-  if (fullName !== undefined) user.fullName        = fullName;
-  if (bio      !== undefined) user.bio             = bio;
-  if (phone    !== undefined) user.phone           = phone;
-  if (city     !== undefined) user.location.city   = city;
-  if (address  !== undefined) user.location.address = address;
+  // build update object
+  const updateFields = {};
+  if (fullName !== undefined) updateFields.fullName       = fullName;
+  if (bio      !== undefined) updateFields.bio            = bio;
+  if (phone    !== undefined) updateFields.phone          = phone;
+  if (city     !== undefined) updateFields["location.city"]    = city;
+  if (address  !== undefined) updateFields["location.address"] = address;
 
-  await user.save();
+  // upsert — create customer doc if not exists
+  await Customer.findOneAndUpdate(
+    { user: userId },
+    { $set: updateFields },
+    { upsert: true, new: true }
+  ).exec();
 
-  const { password, refreshTokens, __v, ...safeUser } = user.toObject();
-  return safeUser;
+  return await getFullProfile(userId);
 };
 
 // ------------------------------------------------------------
@@ -59,36 +86,44 @@ export const updateAvatar = async (userId, uploadedImage) => {
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  // delete old avatar from Cloudinary
-  if (user.avatar?.publicId) {
-    await deleteFromCloudinary(user.avatar.publicId);
+  // get existing customer to delete old avatar
+  const customer = await Customer.findOne({ user: userId }).exec();
+  if (customer?.avatar?.publicId) {
+    await deleteFromCloudinary(customer.avatar.publicId);
   }
 
-  user.avatar = {
-    url:      uploadedImage.url,
-    publicId: uploadedImage.publicId,
-  };
+  // upsert avatar
+  await Customer.findOneAndUpdate(
+    { user: userId },
+    {
+      $set: {
+        "avatar.url":      uploadedImage.url,
+        "avatar.publicId": uploadedImage.publicId,
+      },
+    },
+    { upsert: true, new: true }
+  ).exec();
 
-  await user.save();
-
-  const { password, refreshTokens, __v, ...safeUser } = user.toObject();
-  return safeUser;
+  return await getFullProfile(userId);
 };
 
 // ------------------------------------------------------------
 
 /**
- * @desc    Delete my account
+ * @desc    Delete my account (user + customer)
  */
 export const deleteMe = async (userId) => {
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
   // delete avatar from Cloudinary
-  if (user.avatar?.publicId) {
-    await deleteFromCloudinary(user.avatar.publicId);
+  const customer = await Customer.findOne({ user: userId }).exec();
+  if (customer?.avatar?.publicId) {
+    await deleteFromCloudinary(customer.avatar.publicId);
   }
 
+  // delete both docs
+  await Customer.findOneAndDelete({ user: userId }).exec();
   await user.deleteOne();
 };
 
@@ -101,27 +136,23 @@ export const changeMyPassword = async (userId, currentPassword, newPassword) => 
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  // verify current password
   const isValid = await verifyPassword(currentPassword, user.password);
   if (!isValid)
     throw createUnauthorizedError(MESSAGES.AUTH.INVALID_CURRENT_PASSWORD);
 
-  // new password must be different
   const isSame = await verifyPassword(newPassword, user.password);
   if (isSame)
     throw createBadRequestError(MESSAGES.AUTH.SAME_PASSWORD);
 
-  // update — model will hash it automatically
+  // model will hash automatically
   user.password = newPassword;
-
-  // invalidate all refresh tokens (force re-login on all devices)
+  // invalidate all sessions
   user.refreshTokens = [];
-
   await user.save();
 };
 
 // ============================================================
-//                     ADMIN SERVICES
+//                    ADMIN SERVICES
 // ============================================================
 
 /**
@@ -141,7 +172,7 @@ export const getAllUsers = async ({ page = 1, limit = 10, search } = {}) => {
   const total = await User.countDocuments(filter);
 
   const users = await User.find(filter)
-    .select(safeFields)
+    .select("-password -refreshTokens -__v")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(Number(limit))
@@ -158,30 +189,27 @@ export const getAllUsers = async ({ page = 1, limit = 10, search } = {}) => {
 // ------------------------------------------------------------
 
 /**
- * @desc    Admin — get user by id
+ * @desc    Admin — get user by id (merged profile)
  */
 export const getUserById = async (userId) => {
-  const user = await User.findById(userId)
-    .select(safeFields)
-    .exec();
-
-  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
-  return user;
+  return await getFullProfile(userId);
 };
 
 // ------------------------------------------------------------
 
 /**
- * @desc    Admin — delete any user
+ * @desc    Admin — delete any user + their customer profile
  */
 export const deleteUser = async (userId) => {
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  if (user.avatar?.publicId) {
-    await deleteFromCloudinary(user.avatar.publicId);
+  const customer = await Customer.findOne({ user: userId }).exec();
+  if (customer?.avatar?.publicId) {
+    await deleteFromCloudinary(customer.avatar.publicId);
   }
 
+  await Customer.findOneAndDelete({ user: userId }).exec();
   await user.deleteOne();
 };
 
