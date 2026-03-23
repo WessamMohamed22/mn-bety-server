@@ -4,7 +4,7 @@ import productRouter from "../modules/product/product.routes.js";
 import cartRouter from "../modules/cart/cart.routes.js";
 import wishlistRouter from "../modules/wishlist/wishlist.routes.js";
 import reviewRouter, { productReviewRouter } from "../modules/review/review.routes.js";
-import userRouter from "../modules/user/user.routes.js";
+import customerRouter from "../modules/customer/customer.routes.js";
 
 // ─── Route Handler
 // registers all app routes and handles unknown routes
@@ -22,7 +22,7 @@ const routerHandler = (app) => {
   app.use("/api/wishlist", wishlistRouter);
     app.use("/api/products/:productId/reviews", productReviewRouter);
   app.use("/api/reviews", reviewRouter);
-  app.use("/api/users", userRouter);
+app.use("/api/users", customerRouter);
 
   // ─── Unknown Route Handler
   app.use("/{*any}", (req, res) => {

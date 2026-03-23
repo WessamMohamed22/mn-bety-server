@@ -7,7 +7,6 @@ const mongoId = Joi.string().hex().length(24).messages({
 });
 
 const schemas = {
-  // PUT /me
   updateMe: Joi.object({
     fullName: Joi.string().trim().min(2).max(100),
     bio:      Joi.string().trim().max(500).allow(""),
@@ -20,7 +19,6 @@ const schemas = {
     "object.min": "Provide at least one field to update.",
   }),
 
-  // PUT /me/change-password
   changePassword: Joi.object({
     currentPassword: Joi.string().required().messages({
       "any.required": "Current password is required.",
@@ -35,7 +33,6 @@ const schemas = {
       }),
   }),
 
-  // GET / (admin)
   getAllQuery: Joi.object({
     page:   Joi.number().integer().min(1).default(1),
     limit:  Joi.number().integer().min(1).max(50).default(10),
@@ -45,8 +42,8 @@ const schemas = {
   params: (name) => Joi.object({ [name]: mongoId.required() }),
 };
 
-export const validateUpdateMe      = validate(schemas.updateMe,      "body");
-export const validateChangePassword = validate(schemas.changePassword, "body");
-export const validateGetAllQuery   = validate(schemas.getAllQuery,    "query");
-export const validateMongoIdParam  = (name = "id") =>
+export const validateUpdateMe       = validate(schemas.updateMe,       "body");
+export const validateChangePassword = validate(schemas.changePassword,  "body");
+export const validateGetAllQuery    = validate(schemas.getAllQuery,     "query");
+export const validateMongoIdParam   = (name = "id") =>
   validate(schemas.params(name), "params");
