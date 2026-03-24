@@ -35,7 +35,7 @@ export const registerUser = async (userData) => {
   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
 
   // 2. validate role
-  const allowedRoles = [ROLES.USER, ROLES.SELLER];
+  const allowedRoles = [ROLES.CUSTOMER, ROLES.SELLER];
   if (!allowedRoles.includes(role))
     throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
 
@@ -44,7 +44,7 @@ export const registerUser = async (userData) => {
 
   // 4. build roles array based on role
   const roles =
-    role === ROLES.SELLER ? [ROLES.SELLER] : [ROLES.USER, ROLES.SELLER];
+    role === ROLES.SELLER ? [ROLES.CUSTOMER, ROLES.SELLER] : [ROLES.SELLER];
 
   // 5. generate access and refresh token
   const accessToken = generateAccessToken({
