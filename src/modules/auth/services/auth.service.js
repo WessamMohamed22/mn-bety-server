@@ -1,21 +1,23 @@
 import mongoose from "mongoose";
-import User from "../../DB/models/user.model.js";
-import { env } from "../../config/env.js";
-import { MESSAGES } from "../../constants/messages.js";
-import { ROLES } from "../../constants/roles.js";
+import User from "../../../DB/models/user.model.js";
+import { env } from "../../../config/env.js";
+import { MESSAGES } from "../../../constants/messages.js";
+import { ROLES } from "../../../constants/roles.js";
 import {
   decodeToken,
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-} from "../../services/token.service.js";
+} from "../../../services/token.service.js";
 import {
   createBadRequestError,
   createConflictError,
   createUnauthorizedError,
-} from "../../errors/error.factory.js";
-import { getExpiryDate } from "../../utils/date.util.js";
-import { hashValue, verifyPassword } from "../../utils/hash.util.js";
+} from "../../../errors/error.factory.js";
+import { getExpiryDate } from "../../../utils/date.util.js";
+import { hashValue, verifyPassword } from "../../../utils/hash.util.js";
+import { safeUserData } from "../helpers/user.helper.js";
+import Customer from "../../../DB/models/customer.model.js";
 
 // ============================================================
 //                      AUTH SERVICE
@@ -28,47 +30,42 @@ import { hashValue, verifyPassword } from "../../utils/hash.util.js";
  */
 
 export const registerUser = async (userData) => {
-  const { role, ...baseData } = userData;
-
   // 1. check if email already used
   const emailExist = await User.findOne({ email: userData.email }).exec();
   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
 
-  // 2. validate role
-  const allowedRoles = [ROLES.CUSTOMER, ROLES.SELLER];
-  if (!allowedRoles.includes(role))
-    throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
-
-  // 3. create object_id for user
+  // 2. create object_id for user
   const userId = new mongoose.Types.ObjectId();
 
-  // 4. build roles array based on role
-  const roles =
-    role === ROLES.SELLER ? [ROLES.CUSTOMER, ROLES.SELLER] : [ROLES.SELLER];
+  // 3. define user roles: default: ["customer"]
+  const roles = [ROLES.CUSTOMER];
 
-  // 5. generate access and refresh token
+  // 4. generate access and refresh token
   const accessToken = generateAccessToken({
     userId: userId,
-    roles: roles,
+    roles,
   });
   const refreshToken = generateRefreshToken({ userId });
 
-  // 6. hash new refresh token with expireAt in array
+  // 5. hash new refresh token with expireAt in array
   const hashedToken = hashValue(refreshToken);
   const refreshTokens = [
     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
   ];
-  // 7. create & save user in DB
+  // 6. create & save user in DB
   const user = await User.create({
     _id: userId,
-    ...baseData,
+    ...userData,
     roles,
     refreshTokens,
   });
 
+  // 7. create customer profile
+  await Customer.create({ userId: user._id });
+
   // 8. return safe user data + tokens
   return {
-    user: { userId: user._id, fullName: user.fullName, roles },
+    user: safeUserData(user),
     accessToken,
     refreshToken,
   };
@@ -140,7 +137,7 @@ export const loginUser = async (email, password, currentRefreshToken) => {
 
   // 8. return safe user data + tokens
   return {
-    user: { userId: user._id, fullName: user.fullName, roles: user.roles },
+    user: safeUserData(user),
     accessToken,
     refreshToken,
   };
