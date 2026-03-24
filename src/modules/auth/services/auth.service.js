@@ -1,21 +1,21 @@
 import mongoose from "mongoose";
-import User from "../../DB/models/user.model.js";
-import { env } from "../../config/env.js";
-import { MESSAGES } from "../../constants/messages.js";
-import { ROLES } from "../../constants/roles.js";
+import User from "../../../DB/models/user.model.js";
+import { env } from "../../../config/env.js";
+import { MESSAGES } from "../../../constants/messages.js";
+import { ROLES } from "../../../constants/roles.js";
 import {
   decodeToken,
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-} from "../../services/token.service.js";
+} from "../../../services/token.service.js";
 import {
   createBadRequestError,
   createConflictError,
   createUnauthorizedError,
-} from "../../errors/error.factory.js";
-import { getExpiryDate } from "../../utils/date.util.js";
-import { hashValue, verifyPassword } from "../../utils/hash.util.js";
+} from "../../../errors/error.factory.js";
+import { getExpiryDate } from "../../../utils/date.util.js";
+import { hashValue, verifyPassword } from "../../../utils/hash.util.js";
 
 // ============================================================
 //                      AUTH SERVICE

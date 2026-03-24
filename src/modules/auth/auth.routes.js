@@ -22,4 +22,8 @@ router.use(verifyAccessMW);
 
 router.post("/change-password", AuthController.changePassword);
 
+router.get("/me", AuthController.getMe);
+
+router.patch("/me", AuthController.updateMe);
+
 export default router;
