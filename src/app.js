@@ -22,6 +22,11 @@ const createApp = () => {
   credentials: true,         //Accept cookies
 }));
   app.use(helmet());
+  app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+    // Attach the raw body to the request object so our controller can access it
+    req.rawBody = req.body;
+    next();
+  });
   app.use(express.json());
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));

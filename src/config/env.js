@@ -29,12 +29,17 @@ export const env = {
     SECURE: process.env.COOKIE_SECURE === "true",
     SAME_SITE: process.env.COOKIE_SAME_SITE || "lax",
   },
-  
-// Cloudinary
+
+  // Cloudinary
   CLOUDINARY: {
     CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     API_KEY: process.env.CLOUDINARY_API_KEY,
     API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  },
+  // Stripe
+  STRIPE: {
+    SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   },
   // Frontend
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:4000",
