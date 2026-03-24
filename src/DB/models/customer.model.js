@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const customerSchema = new mongoose.Schema(
   {
     // ─── ref to User ──────────────────────────────────────
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -11,19 +11,6 @@ const customerSchema = new mongoose.Schema(
     },
 
     // ─── Profile fields ───────────────────────────────────
-    fullName: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      default: "",
-    },
-
-    phone: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
     bio: {
       type: String,
       trim: true,
