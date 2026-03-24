@@ -180,3 +180,19 @@ export const updateMe = asyncHandler(async (req, res) => {
   // 3. return success response with updated user data
   return res.json(successResponse({ user }, MESSAGES.USER.UPDATED));
 });
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Delete current authenticated user account with all profiles
+ * @route   DELETE /api/auth/me
+ * @access  Private
+ */
+export const deleteAccount = asyncHandler(async (req, res) => {
+  // 1. delete account service
+  await UserService.deleteAccount(req.decoded.userId);
+  // 2. clear refresh token cookie
+  res.clearCookie(HEADERS.REFRESH_TOKEN, getClearCookieConfig());
+  // 3. return no content
+  return res.status(HTTP_STATUS.NO_CONTENT).end();
+});
