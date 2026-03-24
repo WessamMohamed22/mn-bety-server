@@ -48,3 +48,14 @@ export const verifyWebhookSignature = (rawBody, signature) => {
     throw createBadRequestError(`Webhook Verification Failed: ${err.message}`);
   }
 };
+
+export const refundStripePayment = async (paymentIntentId) => {
+  try {
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+    });
+    return refund;
+  } catch (error) {
+    throw createBadRequestError(`Stripe Refund Failed: ${error.message}`);
+  }
+};
