@@ -17,6 +17,7 @@ import {
 import { getExpiryDate } from "../../../utils/date.util.js";
 import { hashValue, verifyPassword } from "../../../utils/hash.util.js";
 import { safeUserData } from "../helpers/user.helper.js";
+import Customer from "../../../DB/models/customer.model.js";
 
 // ============================================================
 //                      AUTH SERVICE
@@ -59,7 +60,10 @@ export const registerUser = async (userData) => {
     refreshTokens,
   });
 
-  // 7. return safe user data + tokens
+  // 7. create customer profile
+  await Customer.create({ userId: user._id });
+
+  // 8. return safe user data + tokens
   return {
     user: safeUserData(user),
     accessToken,
