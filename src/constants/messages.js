@@ -115,9 +115,15 @@ PRODUCT: {
   PARENT_CATEGORY_NOT_ALLOWED: "Products can only be added to sub-categories, not main categories.",
 },
 
-  SELLER: {
-    NOT_FOUND: "Seller profile not found.",
-  },
+SELLER: {
+  NOT_FOUND:   "Seller profile not found.",
+  FETCHED:     "Seller profile fetched successfully.",
+  FETCHED_ALL: "Sellers fetched successfully.",
+  UPDATED:     "Seller profile updated successfully.",
+  APPROVED:    "Seller approved successfully.",
+  ACTIVATED:   "Seller is now active.",
+  DEACTIVATED: "Seller is now inactive.",
+},
 
   CART: {
     FETCHED: "Cart fetched successfully.",

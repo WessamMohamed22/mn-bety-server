@@ -40,7 +40,7 @@ productReviewRouter.get(
 productReviewRouter.post(
   "/",
   verifyAccessMW,
-  verifyPermissionsMW([ROLES.USER]),
+  verifyPermissionsMW([ROLES.CUSTOMER]),
   validateMongoIdParam("productId"),
   validateCreateReview,
   createReview
@@ -56,7 +56,7 @@ router.get("/:reviewId", validateMongoIdParam("reviewId"), getReviewById);
 router.put(
   "/:reviewId",
   verifyAccessMW,
-  verifyPermissionsMW([ROLES.USER]),
+  verifyPermissionsMW([ROLES.CUSTOMER]),
   validateUpdateReview,
   updateReview
 );
@@ -65,7 +65,7 @@ router.put(
 router.delete(
   "/:reviewId",
   verifyAccessMW,
-  verifyPermissionsMW([ROLES.USER, ROLES.ADMIN]),
+  verifyPermissionsMW([ROLES.CUSTOMER, ROLES.ADMIN]),
   validateMongoIdParam("reviewId"),
   deleteReview
 );

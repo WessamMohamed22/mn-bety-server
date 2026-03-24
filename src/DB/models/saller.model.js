@@ -31,6 +31,11 @@ const sellerSchema = new mongoose.Schema(
       default: false,
     },
 
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
     rating: {
       type: Number,
       default: 0,

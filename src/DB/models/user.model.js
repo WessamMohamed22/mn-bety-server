@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
     roles: {
       type: [String],
       enum: Object.values(ROLES),
-      default: [ROLES.USER],
+      default: [ROLES.CUSTOMER],
     },
     isActive: { type: Boolean, default: true },
     emailVerified: { type: Boolean, default: false },

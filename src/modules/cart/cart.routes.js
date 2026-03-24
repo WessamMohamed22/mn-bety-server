@@ -18,7 +18,7 @@ import { ROLES } from "../../constants/roles.js";
 const router = express.Router();
 
 // User must be logged in and have the 'USER' role to use the cart
-router.use(verifyAccessMW, verifyPermissionsMW([ROLES.USER]));
+router.use(verifyAccessMW, verifyPermissionsMW([ROLES.CUSTOMER]));
 
 router.get("/", getUserCart);
 router.post("/", validateAddToCart, addToCart);

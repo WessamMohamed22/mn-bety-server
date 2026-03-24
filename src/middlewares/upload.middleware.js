@@ -163,3 +163,15 @@ export const uploadAvatarImage = [
     next();
   }),
 ];
+export const uploadSellerLogo = [
+  multerImage.single("sellerLogo"),
+  asyncHandler(async (req, res, next) => {
+    if (!req.file) return next();
+    req.uploadedImage = await streamToCloudinary(
+      req.file.buffer,
+      "sellers/logos",
+      req.file.originalname
+    );
+    next();
+  }),
+];
