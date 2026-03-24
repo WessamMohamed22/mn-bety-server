@@ -28,47 +28,45 @@ import { hashValue, verifyPassword } from "../../utils/hash.util.js";
  */
 
 export const registerUser = async (userData) => {
-  const { role, ...baseData } = userData;
-
   // 1. check if email already used
   const emailExist = await User.findOne({ email: userData.email }).exec();
   if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
 
-  // 2. validate role
-  const allowedRoles = [ROLES.CUSTOMER, ROLES.SELLER];
-  if (!allowedRoles.includes(role))
-    throw createBadRequestError(MESSAGES.USER.INVALID_ROLE);
-
-  // 3. create object_id for user
+  // 2. create object_id for user
   const userId = new mongoose.Types.ObjectId();
 
-  // 4. build roles array based on role
-  const roles =
-    role === ROLES.SELLER ? [ROLES.CUSTOMER, ROLES.SELLER] : [ROLES.SELLER];
+  // 3. define user roles: default: ["customer"]
+  const roles = [ROLES.CUSTOMER];
 
-  // 5. generate access and refresh token
+  // 4. generate access and refresh token
   const accessToken = generateAccessToken({
     userId: userId,
-    roles: roles,
+    roles,
   });
   const refreshToken = generateRefreshToken({ userId });
 
-  // 6. hash new refresh token with expireAt in array
+  // 5. hash new refresh token with expireAt in array
   const hashedToken = hashValue(refreshToken);
   const refreshTokens = [
     { token: hashedToken, expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE) },
   ];
-  // 7. create & save user in DB
+  // 6. create & save user in DB
   const user = await User.create({
     _id: userId,
-    ...baseData,
+    ...userData,
     roles,
     refreshTokens,
   });
 
-  // 8. return safe user data + tokens
+  // 7. return safe user data + tokens
   return {
-    user: { userId: user._id, fullName: user.fullName, roles },
+    user: {
+      userId: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      roles: user.roles,
+    },
     accessToken,
     refreshToken,
   };
@@ -138,9 +136,12 @@ export const loginUser = async (email, password, currentRefreshToken) => {
   user.lastLogin = new Date();
   await user.save();
 
+  // 8. define the data we wanna sent
+  const { _id: userId, fullName, phone, roles } = user;
+
   // 8. return safe user data + tokens
   return {
-    user: { userId: user._id, fullName: user.fullName, roles: user.roles },
+    user: { userId, fullName, email, phone, roles },
     accessToken,
     refreshToken,
   };
