@@ -128,3 +128,36 @@ export const cancelOrder = async (orderId, userId) => {
 
   return order;
 };
+
+export const getUserOrders = async (userId) => {
+  return await Order.find({ user: userId }).sort({ createdAt: -1 });
+};
+
+export const getSellerOrders = async (sellerId) => {
+  return await Order.aggregate([
+    { $match: { "items.seller": new mongoose.Types.ObjectId(sellerId) } },
+    {
+      $addFields: {
+        items: {
+          $filter: {
+            input: "$items",
+            as: "item",
+            cond: {
+              $eq: ["$$item.seller", new mongoose.Types.ObjectId(sellerId)],
+            },
+          },
+        },
+      },
+    },
+    { $sort: { createdAt: -1 } },
+  ]);
+};
+
+export const updateOrderStatus = async (orderId, status) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw createNotFoundError(MESSAGES.order.notFound);
+
+  order.orderStatus = status;
+  await order.save();
+  return order;
+};
