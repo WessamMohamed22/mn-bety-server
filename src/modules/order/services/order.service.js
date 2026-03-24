@@ -66,3 +66,19 @@ export const createCashOrder = async (userId, shippingAddress) => {
   await finalizeOrder(order, cart);
   return order;
 };
+export const createStripeOrder = async (userId, shippingAddress, stripePaymentIntentId) => {
+  const { cart, orderItems, totalPrice } = await getValidatedCart(userId);
+
+  const order = await Order.create({
+    user: userId,
+    items: orderItems,
+    totalPrice,
+    paymentMethod: "Stripe",
+    paymentStatus: "completed",
+    shippingAddress,
+    stripePaymentIntentId, // Save the ID so we can refund it later!
+  });
+
+  await finalizeOrder(order, cart);
+  return order;
+};
