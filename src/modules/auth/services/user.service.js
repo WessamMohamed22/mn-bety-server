@@ -1,6 +1,7 @@
 import User from "../../../DB/models/user.model.js";
 import { MESSAGES } from "../../../constants/messages.js";
 import { createNotFoundError } from "../../../errors/error.factory.js";
+import { safeUserData } from "../helpers/user.helper.js";
 
 // ============================================================
 //                      USER SERVICE
@@ -43,12 +44,5 @@ export const updateMe = async (userId, userData) => {
   await user.save();
 
   // 4. return safe updated user data
-  const { _id, roles, email } = user;
-  return {
-    userId: _id,
-    fullName: user.fullName,
-    email,
-    phone: user.phone,
-    roles,
-  };
+  return safeUserData(user);
 };

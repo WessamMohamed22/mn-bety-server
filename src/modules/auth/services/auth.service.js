@@ -16,6 +16,7 @@ import {
 } from "../../../errors/error.factory.js";
 import { getExpiryDate } from "../../../utils/date.util.js";
 import { hashValue, verifyPassword } from "../../../utils/hash.util.js";
+import { safeUserData } from "../helpers/user.helper.js";
 
 // ============================================================
 //                      AUTH SERVICE
@@ -60,13 +61,7 @@ export const registerUser = async (userData) => {
 
   // 7. return safe user data + tokens
   return {
-    user: {
-      userId: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      roles: user.roles,
-    },
+    user: safeUserData(user),
     accessToken,
     refreshToken,
   };
@@ -136,12 +131,9 @@ export const loginUser = async (email, password, currentRefreshToken) => {
   user.lastLogin = new Date();
   await user.save();
 
-  // 8. define the data we wanna sent
-  const { _id: userId, fullName, phone, roles } = user;
-
   // 8. return safe user data + tokens
   return {
-    user: { userId, fullName, email, phone, roles },
+    user: safeUserData(user),
     accessToken,
     refreshToken,
   };
