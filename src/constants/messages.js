@@ -117,6 +117,7 @@ PRODUCT: {
 
 SELLER: {
   NOT_FOUND:   "Seller profile not found.",
+  DELETED:     "Seller account deleted successfully.",
   FETCHED:     "Seller profile fetched successfully.",
   FETCHED_ALL: "Sellers fetched successfully.",
   UPDATED:     "Seller profile updated successfully.",

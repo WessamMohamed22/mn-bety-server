@@ -37,6 +37,29 @@ export const updateSellerLogo = asyncHandler(async (req, res) => {
     .json(successResponse({ seller }, MESSAGES.SELLER.UPDATED));
 });
 
+// ------------------------------------------------------------
+
+export const upgradeToSeller = asyncHandler(async (req, res) => {
+  const { seller, accessToken } = await SellerService.upgradeToSeller(
+    req.decoded.userId,
+    req.body
+  );
+  return res
+    .status(HTTP_STATUS.CREATED)
+    .json(createdResponse({ seller, accessToken }, "Seller account created successfully."));
+});
+
+// ------------------------------------------------------------
+
+export const deleteSellerAccount = asyncHandler(async (req, res) => {
+  const { accessToken } = await SellerService.deleteSellerAccount(
+    req.decoded.userId
+  );
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse({ accessToken }, "Seller account deleted successfully."));
+});
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
 export const getAllSellers = asyncHandler(async (req, res) => {

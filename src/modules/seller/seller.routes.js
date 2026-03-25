@@ -7,6 +7,8 @@ import {
   getSellerById,
   approveSeller,
   toggleSellerStatus,
+  upgradeToSeller,
+  deleteSellerAccount
 } from "./seller.controller.js";
 import {
   validateUpdateProfile,
@@ -38,6 +40,19 @@ router.post("/me/logo",
   verifyPermissionsMW([ROLES.SELLER]),
   uploadSellerLogo,      // field: "sellerLogo"
   updateSellerLogo
+);
+
+// ─── Upgrade to Seller ────────────────────────────────────────────────────────
+router.post("/upgrade",
+  verifyPermissionsMW([ROLES.CUSTOMER]),
+  validateUpdateProfile, // reuse same validation — description, location, bankInfo
+  upgradeToSeller
+);
+
+// ─── Delete Seller Account only ───────────────────────────────────────────────
+router.delete("/me",
+  verifyPermissionsMW([ROLES.SELLER]),
+  deleteSellerAccount
 );
 
 // ─── Admin only ───────────────────────────────────────────────────────────────
