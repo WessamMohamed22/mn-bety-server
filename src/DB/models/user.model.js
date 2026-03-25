@@ -28,15 +28,9 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     passwordChangedAt: Date,
-    roles: {
-      type: [String],
-      enum: Object.values(ROLES),
-      default: [ROLES.USER],
-    },
-    isActive: { type: Boolean, default: true },
-    emailVerified: { type: Boolean, default: false },
+    phone: { type: String, match: REGEX.PHONE },
     phoneVerified: { type: Boolean, default: false },
-    lastLogin: Date,
+    emailVerified: { type: Boolean, default: false },
     refreshTokens: [
       {
         token: {
@@ -49,10 +43,16 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    roles: {
+      type: [String],
+      enum: Object.values(ROLES),
+      default: [ROLES.CUSTOMER],
+    },
+    isActive: { type: Boolean, default: true },
+    lastLogin: Date,
   },
   { timestamps: true }
 );
-
 
 // hash password in the schema before saving
 userSchema.pre("save", async function () {
@@ -85,5 +85,3 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 const User = mongoose.model.User || mongoose.model("User", userSchema);
 
 export default User;
-
-

@@ -1,4 +1,3 @@
-
 export const MESSAGES = {
   VALIDATION: {
     INVALID_EMAIL: "Please provide a valid email address",
@@ -40,6 +39,12 @@ export const MESSAGES = {
   },
 
   EMAIL: {
+    SUBJECTS: {
+      WELCOME: "Welcome to mn bety Platform!",
+      VERIFICATION: "Verify your email address",
+      PASSWORD_RESET: "Reset your password",
+    },
+
     WELCOME_SENT: "Welcome email sent successfully.",
     VERIFICATION_SENT: "Verification email sent. Please check your inbox.",
     RESET_LINK_SENT: "Password reset link sent to your email.",
@@ -102,18 +107,19 @@ export const MESSAGES = {
     MAX_IMAGES: "You can upload a maximum of 5 images per product.",
   },
 
-PRODUCT: {
-  CREATED: "Product created successfully.",
-  UPDATED: "Product updated successfully.",
-  FETCHED: "Product fetched successfully.",
-  FETCHED_ALL: "Products fetched successfully.",
-  ACTIVATED: "Product is now active.",
-  DEACTIVATED: "Product is now inactive.",
-  APPROVED: "Product approved successfully.",
-  NOT_FOUND: "Product not found.",
-  NOT_OWNER: "You are not the owner of this product.",
-  PARENT_CATEGORY_NOT_ALLOWED: "Products can only be added to sub-categories, not main categories.",
-},
+  PRODUCT: {
+    CREATED: "Product created successfully.",
+    UPDATED: "Product updated successfully.",
+    FETCHED: "Product fetched successfully.",
+    FETCHED_ALL: "Products fetched successfully.",
+    ACTIVATED: "Product is now active.",
+    DEACTIVATED: "Product is now inactive.",
+    APPROVED: "Product approved successfully.",
+    NOT_FOUND: "Product not found.",
+    NOT_OWNER: "You are not the owner of this product.",
+    PARENT_CATEGORY_NOT_ALLOWED:
+      "Products can only be added to sub-categories, not main categories.",
+  },
 
 SELLER: {
   NOT_FOUND:   "Seller profile not found.",
@@ -139,22 +145,39 @@ SELLER: {
   },
 
   WISHLIST: {
-  FETCHED: "Wishlist fetched successfully.",
-  ITEM_ADDED: "Product added to wishlist.",
-  ITEM_REMOVED: "Product removed from wishlist.",
-  CLEARED: "Wishlist cleared successfully.",
-  NOT_FOUND: "Wishlist not found.",
-  ITEM_NOT_FOUND: "Product is not in the wishlist.",
-  ALREADY_EXISTS: "Product is already in your wishlist.",
-},
+    FETCHED: "Wishlist fetched successfully.",
+    ITEM_ADDED: "Product added to wishlist.",
+    ITEM_REMOVED: "Product removed from wishlist.",
+    CLEARED: "Wishlist cleared successfully.",
+    NOT_FOUND: "Wishlist not found.",
+    ITEM_NOT_FOUND: "Product is not in the wishlist.",
+    ALREADY_EXISTS: "Product is already in your wishlist.",
+  },
   REVIEW: {
-  CREATED: "Review submitted successfully.",
-  UPDATED: "Review updated successfully.",
-  DELETED: "Review deleted successfully.",
-  FETCHED: "Review fetched successfully.",
-  FETCHED_ALL: "Reviews fetched successfully.",
-  NOT_FOUND: "Review not found.",
-  NOT_OWNER: "You are not allowed to modify this review.",
-  ALREADY_REVIEWED: "You have already reviewed this product.",
-},
+    CREATED: "Review submitted successfully.",
+    UPDATED: "Review updated successfully.",
+    DELETED: "Review deleted successfully.",
+    FETCHED: "Review fetched successfully.",
+    FETCHED_ALL: "Reviews fetched successfully.",
+    NOT_FOUND: "Review not found.",
+    NOT_OWNER: "You are not allowed to modify this review.",
+    ALREADY_REVIEWED: "You have already reviewed this product.",
+  },
+  order: {
+    cartEmpty: "Your cart is empty.",
+    productNotFound: "A product in your cart no longer exists.",
+    // For dynamic messages,We use a function!
+    insufficientStock: (stock, name) => `Only ${stock} items left for ${name}.`,
+    placedSuccessfully: "Order placed successfully.",
+    redirectingStripe: "Redirecting to payment Gateway.",
+    fetchedSuccessfully: "Orders fetched successfully.",
+    cancelledSuccessfully: "Order cancelled successfully and stock restored.",
+    statusUpdated: "Order status updated successfully.",
+    notFound: "Order not found.",
+    sellerNotFound: "Seller profile not found.",
+    statusUpdatedSuccessfully: "Order status updated successfully.",
+    sellerOrdersFetchedSuccessfully: "Seller orders fetched successfully.",
+    alreadyProcessed: (status) =>
+      `Cannot cancel order. It is already ${status}.`,
+  },
 };

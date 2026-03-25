@@ -11,11 +11,11 @@ import {
  * @param   {string} userId
  */
 export const getUserCart = async (userId) => {
-  const cart = await Cart.findOne({ user: userId }).populate({
+  const cart = await Cart.findOne({ userId }).populate({
     path: "items.product",
     select: "name price discountPrice images slug stock seller",
   }).exec();
-  return cart || { user: userId, items: [] };
+  return cart || { userId, items: [] };
 };
 
 /**
@@ -30,9 +30,9 @@ export const addToCart = async (userId, productId, quantity = 1) => {
   if (quantity > product.stock)
     throw createBadRequestError(MESSAGES.CART.OUT_OF_STOCK(product.stock));
 
-  let cart = await Cart.findOne({ user: userId }).exec();
+  let cart = await Cart.findOne({ userId }).exec();
   if (!cart) {
-    cart = await Cart.create({ user: userId, items: [{ product: productId, quantity }] });
+    cart = await Cart.create({ userId, items: [{ product: productId, quantity }] });
     return cart;
   }
 
@@ -84,7 +84,7 @@ export const updateCartItemQuantity = async (userId, productId, quantity) => {
  * @param   {string} productId
  */
 export const removeFromCart = async (userId, productId) => {
-  const cart = await Cart.findOne({ user: userId }).exec();
+  const cart = await Cart.findOne({ userId }).exec();
   if (!cart) throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
 
   cart.items = cart.items.filter(
@@ -100,7 +100,7 @@ export const removeFromCart = async (userId, productId) => {
  * @param   {string} userId
  */
 export const clearCart = async (userId) => {
-  const cart = await Cart.findOne({ user: userId }).exec();
+  const cart = await Cart.findOne({ userId }).exec();
   if (!cart) throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
   cart.items = [];
   await cart.save();

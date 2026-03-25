@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const orderItemSchema = new mongoose.Schema(
   {
     product: {
@@ -30,7 +31,7 @@ const orderItemSchema = new mongoose.Schema(
 );
 const orderSchema = new mongoose.Schema(
   {
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -43,10 +44,12 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-
+    stripePaymentIntentId: {
+      type: String,
+    },
     paymentMethod: {
       type: String,
-      enum: ["COD", "Credit Card", "Paypal", "Stripe"],
+      enum: ["COD", "Credit Card", "Paypal", "Stripe","Refunded"],
       required: true,
     },
 
