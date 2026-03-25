@@ -39,6 +39,12 @@ export const MESSAGES = {
   },
 
   EMAIL: {
+    SUBJECTS: {
+      WELCOME: "Welcome to mn bety Platform!",
+      VERIFICATION: "Verify your email address",
+      PASSWORD_RESET: "Reset your password",
+    },
+
     WELCOME_SENT: "Welcome email sent successfully.",
     VERIFICATION_SENT: "Verification email sent. Please check your inbox.",
     RESET_LINK_SENT: "Password reset link sent to your email.",
