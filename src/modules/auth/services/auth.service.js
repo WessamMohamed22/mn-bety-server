@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import User from "../../../DB/models/user.model.js";
+import Customer from "../../../DB/models/customer.model.js";
 import { env } from "../../../config/env.js";
 import { MESSAGES } from "../../../constants/messages.js";
 import { ROLES } from "../../../constants/roles.js";
@@ -14,10 +15,11 @@ import {
   createConflictError,
   createUnauthorizedError,
 } from "../../../errors/error.factory.js";
+import { generateHashedToken, hashValue, verifyPassword } from "../../../utils/hash.util.js";
 import { getExpiryDate } from "../../../utils/date.util.js";
-import { hashValue, verifyPassword } from "../../../utils/hash.util.js";
 import { safeUserData } from "../helpers/user.helper.js";
-import Customer from "../../../DB/models/customer.model.js";
+import { sendEmail } from "../../../services/email/email.service.js";
+import { passwordResetEmailHtml, welcomeEmailHtml } from "../../../services/email/email.templates.js";
 
 // ============================================================
 //                      AUTH SERVICE
@@ -63,7 +65,14 @@ export const registerUser = async (userData) => {
   // 7. create customer profile
   await Customer.create({ userId: user._id });
 
-  // 8. return safe user data + tokens
+  // 8. send welcome email
+  await sendEmail({
+    to: user.email,
+    subject: MESSAGES.EMAIL.SUBJECTS.WELCOME,
+    html: welcomeEmailHtml(user.fullName),
+  });
+
+  // 9. return safe user data + tokens
   return {
     user: safeUserData(user),
     accessToken,
@@ -276,5 +285,60 @@ export const changePassword = async (
     ? user.refreshTokens.filter((rtoken) => rtoken.token === currentHashToken)
     : [];
   // 6. save changes in DB
+  await user.save();
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc Generates a password reset token and sends it via email.
+ * @param {string} email
+ * @reminder Always returns success to avoid user enumeration.
+ */
+export const forgotPassword = async (email) => {
+  // 1. find user by email — silently return if not found to prevent user enumeration
+  const user = await User.findOne({ email }).exec();
+  if (!user) return;
+  // 2. generate token with hashing
+  const { token, hashed } = generateHashedToken();
+  // 3. create reset token objet & save in DB
+  const passwordResetToken = {
+    token: hashed,
+    expireAt: getExpiryDate(env.AUTH.RESET_PASSWORD_EXPIRE),
+  };
+  user.passwordResetToken = passwordResetToken;
+  await user.save();
+  // 4. send reset email with token
+  const url = `${env.CLIENT_URL}/reset-password?token=${token}`;
+  await sendEmail({
+    to: email,
+    subject: MESSAGES.EMAIL.SUBJECTS.PASSWORD_RESET,
+    html: passwordResetEmailHtml(url),
+  });
+};
+// ------------------------------------------------------------
+
+/**
+ * Resets the user's password using the token from the reset link.
+ * @param {string} token - reset token
+ * @param {string} newPassword - new plain-text password
+ */
+export const resetPassword = async (token, newPassword) => {
+  // 1. hash the incoming token to compare with DB
+  const hashedToken = hashValue(token);
+  // 2. find user with token and make sure it hasn't expire
+  const user = await User.findOne({
+    "passwordResetToken.token": hashedToken, 
+    "passwordResetToken.expireAt": { $gt: new Date() },
+  }).exec();
+  if (!user) throw createBadRequestError(MESSAGES.AUTH.INVALID_RESET_TOKEN);
+  // 3. add newPassword in user and remember it will hash in model !!!!
+  user.password = newPassword;
+  // 4. clear reset token fields
+  user.passwordResetToken.token = null;
+  user.passwordResetToken.expireAt = null;
+  // 5. invalidate all refresh tokens for security
+  user.refreshTokens = [];
+  // save changes in DB
   await user.save();
 };
