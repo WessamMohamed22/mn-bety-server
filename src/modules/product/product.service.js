@@ -160,9 +160,11 @@ export const getProductByIdOrSlug = async (idOrSlug) => {
     .populate({
       path: "seller",
       select: "description logo rating user location", 
+      options: { strictPopulate: false },
       populate: {
         path: "user",
-        select: "fullName"
+        select: "fullName",
+        options: { strictPopulate: false }
       }
     })
     .exec();
