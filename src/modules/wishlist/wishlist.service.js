@@ -12,7 +12,7 @@ import {
  * @param   {string} userId
  */
 export const getWishlist = async (userId) => {
-  const wishlist = await Wishlist.findOne({ user: userId })
+  const wishlist = await Wishlist.findOne({ userId })
     .populate({
       path: "products",
       select: "name price discountPrice images slug rating isActive isApproved",
@@ -35,9 +35,9 @@ export const addToWishlist = async (userId, productId) => {
     throw createBadRequestError(MESSAGES.PRODUCT.NOT_FOUND);
 
   // 2. find or create wishlist
-  let wishlist = await Wishlist.findOne({ user: userId }).exec();
+  let wishlist = await Wishlist.findOne({ userId }).exec();
   if (!wishlist) {
-    wishlist = await Wishlist.create({ user: userId, products: [productId] });
+    wishlist = await Wishlist.create({ userId, products: [productId] });
     return wishlist;
   }
 
@@ -59,7 +59,7 @@ export const addToWishlist = async (userId, productId) => {
  * @param   {string} productId
  */
 export const removeFromWishlist = async (userId, productId) => {
-  const wishlist = await Wishlist.findOne({ user: userId }).exec();
+  const wishlist = await Wishlist.findOne({ userId }).exec();
   if (!wishlist) throw createNotFoundError(MESSAGES.WISHLIST.NOT_FOUND);
 
   const exists = wishlist.products.some(
@@ -80,7 +80,7 @@ export const removeFromWishlist = async (userId, productId) => {
  * @param   {string} userId
  */
 export const clearWishlist = async (userId) => {
-  const wishlist = await Wishlist.findOne({ user: userId }).exec();
+  const wishlist = await Wishlist.findOne({ userId }).exec();
   if (!wishlist) throw createNotFoundError(MESSAGES.WISHLIST.NOT_FOUND);
 
   wishlist.products = [];
@@ -94,7 +94,7 @@ export const clearWishlist = async (userId) => {
  * @param   {string} productId
  */
 export const isProductInWishlist = async (userId, productId) => {
-  const wishlist = await Wishlist.findOne({ user: userId }).exec();
+  const wishlist = await Wishlist.findOne({ userId }).exec();
   if (!wishlist) return { isInWishlist: false };
 
   const isInWishlist = wishlist.products.some(
