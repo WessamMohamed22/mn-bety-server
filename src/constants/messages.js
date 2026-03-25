@@ -138,5 +138,14 @@ PRODUCT: {
   NOT_FOUND: "Wishlist not found.",
   ITEM_NOT_FOUND: "Product is not in the wishlist.",
   ALREADY_EXISTS: "Product is already in your wishlist.",
+  REVIEW: {
+  CREATED: "Review submitted successfully.",
+  UPDATED: "Review updated successfully.",
+  DELETED: "Review deleted successfully.",
+  FETCHED: "Review fetched successfully.",
+  FETCHED_ALL: "Reviews fetched successfully.",
+  NOT_FOUND: "Review not found.",
+  NOT_OWNER: "You are not allowed to modify this review.",
+  ALREADY_REVIEWED: "You have already reviewed this product.",
 },
 };
