@@ -62,7 +62,7 @@ const getCategoryWithChildren = async (categoryId) => {
  */
 export const createProduct = async (data, images = [], userId) => {
   // 1. find seller profile linked to this user
-  const seller = await Seller.findOne({ user: userId }).exec();
+  const seller = await Seller.findOne({ userId }).exec();
   if (!seller) throw createBadRequestError(MESSAGES.SELLER.NOT_FOUND);
 
   // 2. ensure category is a leaf
@@ -206,7 +206,7 @@ export const updateProduct = async (id, data, images = [], userId) => {
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
 
   // 2. verify ownership — seller can only edit their own products
-  const seller = await Seller.findOne({ user: userId }).exec();
+  const seller = await Seller.findOne({ userId }).exec();
   if (!seller || String(product.seller) !== String(seller._id)) {
     throw createForbiddenError(MESSAGES.PRODUCT.NOT_OWNER);
   }
@@ -262,7 +262,7 @@ export const deleteProduct = async (id, userId, roles) => {
   // admin can delete any product
   if (!roles.includes("admin")) {
     // seller can only delete their own
-    const seller = await Seller.findOne({ user: userId }).exec();
+    const seller = await Seller.findOne({ userId }).exec();
     if (!seller || String(product.seller) !== String(seller._id)) {
       throw createForbiddenError(MESSAGES.PRODUCT.NOT_OWNER);
     }
@@ -290,7 +290,7 @@ export const toggleProductStatus = async (id, userId, roles) => {
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
 
   if (!roles.includes("admin")) {
-    const seller = await Seller.findOne({ user: userId }).exec();
+    const seller = await Seller.findOne({  userId }).exec();
     if (!seller || String(product.seller) !== String(seller._id)) {
       throw createForbiddenError(MESSAGES.PRODUCT.NOT_OWNER);
     }
