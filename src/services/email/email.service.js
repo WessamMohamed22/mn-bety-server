@@ -14,18 +14,15 @@ export let transporter = null;
 
 // Creates and stores the nodemailer transporter using env config.
 export const initializeEmailTransporter = () => {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.EMAIL_HOST || "smtp.gmail.com",
-      port: env.EMAIL_PORT,
-      secure: env.EMAIL_SECURE === "true",
-      auth: {
-        user: env.EMAIL.USER,
-        pass: env.EMAIL.PASSWORD,
-      },
-    });
-  }
-  return transporter;
+  transporter = nodemailer.createTransport({
+    host: env.EMAIL.HOST || "smtp.gmail.com",
+    port: env.EMAIL.PORT,
+    secure: env.EMAIL.SECURE === "true",
+    auth: {
+      user: env.EMAIL.USER,
+      pass: env.EMAIL.PASSWORD,
+    },
+  });
 };
 
 // Verifies the transporter connection - exits process if mail server is unreachable.
