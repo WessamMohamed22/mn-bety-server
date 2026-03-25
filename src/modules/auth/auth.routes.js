@@ -17,6 +17,10 @@ router.post("/logout", AuthController.logout);
 
 router.post("/refresh-token", AuthController.refreshToken);
 
+router.post("/forgot-password", AuthController.forgotPassword);
+
+router.post("/reset-password", AuthController.resetPassword);
+
 // ----------------- Private Routes -----------------
 router.use(verifyAccessMW);
 

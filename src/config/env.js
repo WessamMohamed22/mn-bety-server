@@ -10,6 +10,11 @@ export const env = {
   // Database
   DATABASE_URI: process.env.DATABASE_URI,
 
+  // AUTH
+  AUTH: {
+    RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_EXPIRE || "15m",
+  },
+
   // JWT
   JWT: {
     SECRET_ACCESS: process.env.JWT_SECRET_ACCESS,
@@ -46,13 +51,13 @@ export const env = {
     API_KEY: process.env.CLOUDINARY_API_KEY,
     API_SECRET: process.env.CLOUDINARY_API_SECRET,
   },
-  
+
   // Stripe
   STRIPE: {
     SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   },
-  
+
   // Frontend
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:4000",
 

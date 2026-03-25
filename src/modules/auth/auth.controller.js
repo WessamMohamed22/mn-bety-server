@@ -122,6 +122,7 @@ export const refreshToken = asyncHandler(async (req, res) => {
   // 5. return new access token to client
   res.json(createdResponse(accessToken, MESSAGES.AUTH.TOKEN_REFRESHED));
 });
+
 // ------------------------------------------------------------
 
 /**
@@ -148,6 +149,44 @@ export const changePassword = asyncHandler(async (req, res) => {
   res.clearCookie(HEADERS.REFRESH_TOKEN, getClearCookieConfig());
   // 5. return success
   return res.json(successResponse(null, MESSAGES.AUTH.PASSWORD_CHANGED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Send password reset link to email
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+export const forgotPassword = asyncHandler(async (req, res) => {
+  // 1. check if body have email
+  const { email } = req.body;
+  if (!email) throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+
+  // 2. trigger forgot password service
+  // always returns success to prevent user enumeration !!!
+  await AuthService.forgotPassword(email);
+
+  // 3. return success
+  res.json(successResponse(null, MESSAGES.AUTH.RESET_EMAIL_SENT));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Reset password using token from email link
+ * @route   POST /api/auth/reset-password
+ * @access  Public
+ */
+export const resetPassword = asyncHandler(async (req, res) => {
+  // 1. validate token and new password in body
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword)
+    throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+  // 2. reset password service
+  await AuthService.resetPassword(token, newPassword);
+  // 3. return success
+  return res.json(successResponse(null, MESSAGES.AUTH.PASSWORD_RESET_SUCCESS));
 });
 
 // ------------------------------------------------------------

@@ -43,6 +43,26 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    emailVerificationToken: {
+      token: {
+        type: String,
+        default: null,
+      },
+      expireAt: {
+        type: Date,
+        default: null,
+      },
+    },
+    passwordResetToken: {
+      token: {
+        type: String,
+        default: null,
+      },
+      expireAt: {
+        type: Date,
+        default: null,
+      },
+    },
     roles: {
       type: [String],
       enum: Object.values(ROLES),
