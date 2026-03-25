@@ -3,7 +3,7 @@ import Product from "../../DB/models/product.model.js";
 import Seller from "../../DB/models/saller.model.js";
 import Category from "../../DB/models/category.model.js";
 import { MESSAGES } from "../../constants/messages.js";
-import { deleteFromCloudinary } from "../../middlewares/upload.middleware.js"; 
+import { deleteFromCloudinary } from "../../middlewares/upload.middleware.js";
 import {
   createBadRequestError,
   createForbiddenError,
@@ -39,15 +39,15 @@ const ensureLeafCategory = async (categoryId) => {
 const getCategoryWithChildren = async (categoryId) => {
   // get all direct children
   const children = await Category.find({ parent: categoryId }).select("_id").exec();
-  
+
   // if no children, just return the category itself
   if (children.length === 0) return [categoryId];
-  
+
   // recursively get children of children
   const childIds = await Promise.all(
     children.map((child) => getCategoryWithChildren(child._id))
   );
-  
+
   // flatten and include self
   return [categoryId, ...childIds.flat()];
 };
@@ -105,7 +105,7 @@ export const getAllProducts = async (query) => {
   // 1. build filter — public only sees approved + active products
   const filter = { isApproved: true, isActive: true };
 
-   if (category) {
+  if (category) {
     const categoryIds = await getCategoryWithChildren(category);
     filter.category = { $in: categoryIds };
   }
@@ -130,7 +130,7 @@ export const getAllProducts = async (query) => {
   // 3. fetch
   const products = await Product.find(filter)
     .populate("category", "name slug")
-    .populate("seller", "user rating")
+   .populate("seller", "user rating location") 
     .sort(sort)
     .skip(skip)
     .limit(limit)
@@ -154,9 +154,17 @@ export const getProductByIdOrSlug = async (idOrSlug) => {
   const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
   const query = isObjectId ? { _id: idOrSlug } : { slug: idOrSlug };
 
+ 
   const product = await Product.findOne(query)
     .populate("category", "name slug")
-    .populate("seller", "user rating")
+    .populate({
+      path: "seller",
+      select: "description logo rating user location", 
+      populate: {
+        path: "user",
+        select: "fullName"
+      }
+    })
     .exec();
 
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
@@ -176,6 +184,7 @@ export const getSellerProducts = async (sellerId) => {
 
   const products = await Product.find({ seller: sellerId })
     .populate("category", "name slug")
+    .populate("seller", "user rating location") 
     .sort({ createdAt: -1 })
     .exec();
 
@@ -217,9 +226,9 @@ export const updateProduct = async (id, data, images = [], userId) => {
   // 5. apply remaining fields
   Object.assign(product, data);
 
- // 6.  if new images uploaded, delete old ones first then replace
+  // 6.  if new images uploaded, delete old ones first then replace
   if (images.length > 0) {
-      // check total images won't exceed 5
+    // check total images won't exceed 5
     if (images.length > 5) {
       throw createBadRequestError("You can upload a maximum of 5 images per product.");
     }
@@ -258,7 +267,7 @@ export const deleteProduct = async (id, userId, roles) => {
       throw createForbiddenError(MESSAGES.PRODUCT.NOT_OWNER);
     }
   }
-   //  delete all images from Cloudinary before removing product
+  //  delete all images from Cloudinary before removing product
   if (product.images.length > 0) {
     await Promise.all(
       product.images.map((img) => deleteFromCloudinary(img.publicId))
