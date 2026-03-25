@@ -7,6 +7,7 @@ import {
   createConflictError,
   createForbiddenError,
 } from "../../errors/error.factory.js";
+import { generateAccessToken } from "../../services/token.service.js";
 import { ROLES } from "../../constants/roles.js";
 
 // ============================================================
@@ -17,7 +18,7 @@ import { ROLES } from "../../constants/roles.js";
  * @desc    Get my seller profile
  */
 export const getMySellerProfile = async (userId) => {
-  const seller = await Seller.findOne({ user: userId })
+  const seller = await Seller.findOne({ userId })
     .populate("user", "fullName email createdAt")
     .exec();
 
@@ -33,10 +34,10 @@ export const getMySellerProfile = async (userId) => {
  */
 export const createSellerProfile = async (userId) => {
   // check if already exists
-  const existing = await Seller.findOne({ user: userId }).exec();
+  const existing = await Seller.findOne({ userId }).exec();
   if (existing) return existing;
 
-  const seller = await Seller.create({ user: userId });
+  const seller = await Seller.create({ userId });
   return seller;
 };
 
@@ -46,7 +47,7 @@ export const createSellerProfile = async (userId) => {
  * @desc    Update my seller profile (description, location, bankInfo)
  */
 export const updateSellerProfile = async (userId, data) => {
-  const seller = await Seller.findOne({ user: userId }).exec();
+  const seller = await Seller.findOne({ userId }).exec();
   if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
 
   const { description, location, bankInfo } = data;
@@ -76,7 +77,7 @@ export const updateSellerProfile = async (userId, data) => {
  * @desc    Upload / update seller logo
  */
 export const updateSellerLogo = async (userId, uploadedImage) => {
-  const seller = await Seller.findOne({ user: userId }).exec();
+  const seller = await Seller.findOne({ userId }).exec();
   if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
 
   // delete old logo from Cloudinary
@@ -91,6 +92,74 @@ export const updateSellerLogo = async (userId, uploadedImage) => {
 
   await seller.save();
   return seller.populate("user", "fullName email");
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Upgrade customer to seller
+ * @param   {string} userId
+ * @param   {Object} data - { description, location, bankInfo }
+ */
+export const upgradeToSeller = async (userId, data) => {
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // 1. check if already a seller
+  if (user.roles.includes(ROLES.SELLER))
+    throw createConflictError("You already have a seller account.");
+
+  // 2. create seller profile
+  const seller = await Seller.create({
+    user: userId,
+    description: data.description ?? "",
+    location: data.location ?? {},
+    bankInfo: data.bankInfo ?? {},
+  });
+
+  // 3. add SELLER role to user
+  user.roles.push(ROLES.SELLER);
+  await user.save();
+
+  // 4. generate new access token with updated roles
+  const accessToken = generateAccessToken({
+    userId: user._id,
+    roles: user.roles,
+  });
+
+  return { seller, accessToken };
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Delete seller account only (keep customer)
+ * @param   {string} userId
+ */
+export const deleteSellerAccount = async (userId) => {
+  const seller = await Seller.findOne({ userId }).exec();
+  if (!seller) throw createNotFoundError(MESSAGES.SELLER.DELETED);
+
+  // 1. delete seller logo from Cloudinary
+  if (seller.logo?.publicId) {
+    await deleteFromCloudinary(seller.logo.publicId);
+  }
+
+  // 2. delete seller profile
+  await seller.deleteOne();
+
+  // 3. remove SELLER role from user
+  const user = await User.findById(userId).exec();
+  user.roles = user.roles.filter((r) => r !== ROLES.SELLER);
+  await user.save();
+
+  // 4. generate new access token with updated roles
+  const accessToken = generateAccessToken({
+    userId: user._id,
+    roles: user.roles,
+  });
+
+  return { accessToken };
 };
 
 // ============================================================

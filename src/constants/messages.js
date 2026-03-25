@@ -121,15 +121,16 @@ export const MESSAGES = {
       "Products can only be added to sub-categories, not main categories.",
   },
 
-  SELLER: {
-    NOT_FOUND: "Seller profile not found.",
-    FETCHED: "Seller profile fetched successfully.",
-    FETCHED_ALL: "Sellers fetched successfully.",
-    UPDATED: "Seller profile updated successfully.",
-    APPROVED: "Seller approved successfully.",
-    ACTIVATED: "Seller is now active.",
-    DEACTIVATED: "Seller is now inactive.",
-  },
+SELLER: {
+  NOT_FOUND:   "Seller profile not found.",
+  DELETED:     "Seller account deleted successfully.",
+  FETCHED:     "Seller profile fetched successfully.",
+  FETCHED_ALL: "Sellers fetched successfully.",
+  UPDATED:     "Seller profile updated successfully.",
+  APPROVED:    "Seller approved successfully.",
+  ACTIVATED:   "Seller is now active.",
+  DEACTIVATED: "Seller is now inactive.",
+},
 
   CART: {
     FETCHED: "Cart fetched successfully.",
