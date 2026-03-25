@@ -2,13 +2,12 @@ import Seller from "../../DB/models/saller.model.js";
 import User from "../../DB/models/user.model.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { deleteFromCloudinary } from "../../middlewares/upload.middleware.js";
+import { generateAccessToken } from "../../services/token.service.js";
+import { ROLES } from "../../constants/roles.js";
 import {
   createNotFoundError,
   createConflictError,
-  createForbiddenError,
 } from "../../errors/error.factory.js";
-import { generateAccessToken } from "../../services/token.service.js";
-import { ROLES } from "../../constants/roles.js";
 
 // ============================================================
 //                   SELLER (SELF) SERVICES
@@ -19,7 +18,7 @@ import { ROLES } from "../../constants/roles.js";
  */
 export const getMySellerProfile = async (userId) => {
   const seller = await Seller.findOne({ userId })
-    .populate("user", "fullName email createdAt")
+    .select("-__v")
     .exec();
 
   if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
@@ -29,11 +28,9 @@ export const getMySellerProfile = async (userId) => {
 // ------------------------------------------------------------
 
 /**
- * @desc    Create seller profile (called from auth.service on register)
- * @param   {string} userId
+ * @desc    Create seller profile (called on register or upgrade)
  */
 export const createSellerProfile = async (userId) => {
-  // check if already exists
   const existing = await Seller.findOne({ userId }).exec();
   if (existing) return existing;
 
@@ -47,28 +44,34 @@ export const createSellerProfile = async (userId) => {
  * @desc    Update my seller profile (description, location, bankInfo)
  */
 export const updateSellerProfile = async (userId, data) => {
-  const seller = await Seller.findOne({ userId }).exec();
-  if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
-
   const { description, location, bankInfo } = data;
 
-  if (description !== undefined) seller.description = description;
+  const updateFields = {};
+  if (description !== undefined) updateFields.description = description;
 
   if (location) {
-    if (location.country !== undefined) seller.location.country = location.country;
-    if (location.city    !== undefined) seller.location.city    = location.city;
-    if (location.address !== undefined) seller.location.address = location.address;
+    if (location.country !== undefined) updateFields["location.country"] = location.country;
+    if (location.city    !== undefined) updateFields["location.city"]    = location.city;
+    if (location.address !== undefined) updateFields["location.address"] = location.address;
   }
 
   if (bankInfo) {
-    if (bankInfo.bankName      !== undefined) seller.bankInfo.bankName      = bankInfo.bankName;
-    if (bankInfo.accountName   !== undefined) seller.bankInfo.accountName   = bankInfo.accountName;
-    if (bankInfo.accountNumber !== undefined) seller.bankInfo.accountNumber = bankInfo.accountNumber;
-    if (bankInfo.iban          !== undefined) seller.bankInfo.iban          = bankInfo.iban;
+    if (bankInfo.bankName      !== undefined) updateFields["bankInfo.bankName"]      = bankInfo.bankName;
+    if (bankInfo.accountName   !== undefined) updateFields["bankInfo.accountName"]   = bankInfo.accountName;
+    if (bankInfo.accountNumber !== undefined) updateFields["bankInfo.accountNumber"] = bankInfo.accountNumber;
+    if (bankInfo.iban          !== undefined) updateFields["bankInfo.iban"]          = bankInfo.iban;
   }
 
-  await seller.save();
-  return seller.populate("user", "fullName email");
+  const seller = await Seller.findOneAndUpdate(
+    { userId },
+    { $set: updateFields },
+    { new: true, runValidators: true }
+  )
+    .select("-__v")
+    .exec();
+
+  if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
+  return seller;
 };
 
 // ------------------------------------------------------------
@@ -85,46 +88,51 @@ export const updateSellerLogo = async (userId, uploadedImage) => {
     await deleteFromCloudinary(seller.logo.publicId);
   }
 
-  seller.logo = {
-    url:      uploadedImage.url,
-    publicId: uploadedImage.publicId,
-  };
+  const updated = await Seller.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        "logo.url":      uploadedImage.url,
+        "logo.publicId": uploadedImage.publicId,
+      },
+    },
+    { new: true }
+  )
+    .select("-__v")
+    .exec();
 
-  await seller.save();
-  return seller.populate("user", "fullName email");
+  return updated;
 };
 
 // ------------------------------------------------------------
 
 /**
  * @desc    Upgrade customer to seller
- * @param   {string} userId
- * @param   {Object} data - { description, location, bankInfo }
  */
 export const upgradeToSeller = async (userId, data) => {
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  // 1. check if already a seller
+  // check if already a seller
   if (user.roles.includes(ROLES.SELLER))
     throw createConflictError("You already have a seller account.");
 
-  // 2. create seller profile
+  // create seller profile
   const seller = await Seller.create({
-    user: userId,
-    description: data.description ?? "",
-    location: data.location ?? {},
-    bankInfo: data.bankInfo ?? {},
+    userId,
+    description: data?.description ?? "",
+    location:    data?.location    ?? {},
+    bankInfo:    data?.bankInfo    ?? {},
   });
 
-  // 3. add SELLER role to user
+  // add SELLER role to user
   user.roles.push(ROLES.SELLER);
   await user.save();
 
-  // 4. generate new access token with updated roles
+  // generate new access token with updated roles
   const accessToken = generateAccessToken({
     userId: user._id,
-    roles: user.roles,
+    roles:  user.roles,
   });
 
   return { seller, accessToken };
@@ -133,30 +141,49 @@ export const upgradeToSeller = async (userId, data) => {
 // ------------------------------------------------------------
 
 /**
- * @desc    Delete seller account only (keep customer)
- * @param   {string} userId
+ * @desc    Seller soft delete their own account
  */
 export const deleteSellerAccount = async (userId) => {
-  const seller = await Seller.findOne({ userId }).exec();
-  if (!seller) throw createNotFoundError(MESSAGES.SELLER.DELETED);
+  // 1. find user
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  // 1. delete seller logo from Cloudinary
+  // 2. find seller
+  const seller = await Seller.findOne({ userId }).exec();
+  if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
+
+  // 3. delete logo from Cloudinary
   if (seller.logo?.publicId) {
     await deleteFromCloudinary(seller.logo.publicId);
   }
 
-  // 2. delete seller profile
-  await seller.deleteOne();
+  // 4. anonymize seller profile
+  await Seller.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        isActive:        false,
+        isApproved:      false,
+        "logo.url":      "",
+        "logo.publicId": "",
+      },
+      $unset: {
+        description: "",
+        location:    "",
+        bankInfo:    "",
+      },
+    }
+  );
 
-  // 3. remove SELLER role from user
-  const user = await User.findById(userId).exec();
-  user.roles = user.roles.filter((r) => r !== ROLES.SELLER);
+  // 5. remove SELLER role from user — keep CUSTOMER
+  user.roles         = user.roles.filter((r) => r !== ROLES.SELLER);
+  user.refreshTokens = [];
   await user.save();
 
-  // 4. generate new access token with updated roles
+  // 6. generate new access token with updated roles
   const accessToken = generateAccessToken({
     userId: user._id,
-    roles: user.roles,
+    roles:  user.roles,
   });
 
   return { accessToken };
@@ -167,26 +194,25 @@ export const deleteSellerAccount = async (userId) => {
 // ============================================================
 
 /**
- * @desc    Admin — get all sellers with pagination
+ * @desc    Admin — get all sellers with pagination & search
  */
 export const getAllSellers = async ({ page = 1, limit = 10, search } = {}) => {
   const filter = {};
+  const skip   = (page - 1) * limit;
 
-  const skip  = (page - 1) * limit;
-  const total = await Seller.countDocuments(filter);
-
-  // if search — find matching users first
   if (search) {
     const users = await User.find({
       fullName: { $regex: search, $options: "i" },
-      roles: ROLES.SELLER,
+      roles:    ROLES.SELLER,
     }).select("_id").exec();
 
-    filter.user = { $in: users.map((u) => u._id) };
+    filter.userId = { $in: users.map((u) => u._id) };
   }
 
+  const total = await Seller.countDocuments(filter);
+
   const sellers = await Seller.find(filter)
-    .populate("user", "fullName email createdAt isActive")
+    .select("-__v")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(Number(limit))
@@ -207,7 +233,7 @@ export const getAllSellers = async ({ page = 1, limit = 10, search } = {}) => {
  */
 export const getSellerById = async (sellerId) => {
   const seller = await Seller.findById(sellerId)
-    .populate("user", "fullName email createdAt isActive")
+    .select("-__v")
     .exec();
 
   if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
@@ -242,4 +268,34 @@ export const toggleSellerStatus = async (sellerId) => {
   await seller.save();
 
   return { isActive: seller.isActive };
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Admin — soft delete seller
+ */
+export const deleteSeller = async (sellerId) => {
+  const seller = await Seller.findById(sellerId).exec();
+  if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
+
+  // delete logo from Cloudinary
+  if (seller.logo?.publicId) {
+    await deleteFromCloudinary(seller.logo.publicId);
+  }
+
+  // soft delete + unset all profile data
+  await Seller.findByIdAndUpdate(sellerId, {
+    $set: {
+      isActive:        false,
+      isApproved:      false,
+      "logo.url":      "",
+      "logo.publicId": "",
+    },
+    $unset: {
+      description: "",
+      location:    "",
+      bankInfo:    "",
+    },
+  });
 };
