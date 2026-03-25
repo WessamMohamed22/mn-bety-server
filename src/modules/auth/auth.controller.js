@@ -1,4 +1,5 @@
-import * as AuthService from "./auth.service.js";
+import * as AuthService from "./services/auth.service.js";
+import * as UserService from "./services/user.service.js";
 import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { HEADERS } from "../../constants/headers.js";
@@ -147,4 +148,51 @@ export const changePassword = asyncHandler(async (req, res) => {
   res.clearCookie(HEADERS.REFRESH_TOKEN, getClearCookieConfig());
   // 5. return success
   return res.json(successResponse(null, MESSAGES.AUTH.PASSWORD_CHANGED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Get current authenticated user
+ * @route   GET /api/auth/me
+ * @access  Private
+ */
+export const getMe = asyncHandler(async (req, res) => {
+  // 1. get current user data service
+  const user = await UserService.getMe(req.decoded.userId);
+  // 2. return success response with safe user data
+  return res.json(successResponse({ user }, MESSAGES.USER.FETCHED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Update current authenticated user info
+ * @route   PATCH /api/auth/me
+ * @access  Private
+ */
+export const updateMe = asyncHandler(async (req, res) => {
+  // 1. check for request body
+  if (!req.body)
+    throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+  // 2. update user info service
+  const user = await UserService.updateMe(req.decoded.userId, req.body);
+  // 3. return success response with updated user data
+  return res.json(successResponse({ user }, MESSAGES.USER.UPDATED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Delete current authenticated user account with all profiles
+ * @route   DELETE /api/auth/me
+ * @access  Private
+ */
+export const deleteAccount = asyncHandler(async (req, res) => {
+  // 1. delete account service
+  await UserService.deleteAccount(req.decoded.userId);
+  // 2. clear refresh token cookie
+  res.clearCookie(HEADERS.REFRESH_TOKEN, getClearCookieConfig());
+  // 3. return no content
+  return res.status(HTTP_STATUS.NO_CONTENT).end();
 });

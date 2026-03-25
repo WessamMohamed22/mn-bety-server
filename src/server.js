@@ -1,6 +1,7 @@
 import createApp from "./app.js";
 import { env } from "./config/env.js";
 import connectDB from "./DB/connection.js";
+import { verifyEmailTransporter } from "./services/email/email.service.js";
 
 // server instance
 let server;
@@ -9,7 +10,8 @@ let server;
 
 const startServer = async () => {
   // Connect DB:
-  await connectDB()
+  await connectDB();
+  await verifyEmailTransporter();
 
   // create app
   const app = createApp();

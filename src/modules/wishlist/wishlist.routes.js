@@ -17,7 +17,7 @@ import { ROLES } from "../../constants/roles.js";
 const router = express.Router();
 
 // All wishlist routes require login + USER role
-router.use(verifyAccessMW, verifyPermissionsMW([ROLES.USER]));
+router.use(verifyAccessMW, verifyPermissionsMW([ROLES.CUSTOMER]));
 
 router.get("/", getWishlist);
 router.post("/", validateAddToWishlist, addToWishlist);
