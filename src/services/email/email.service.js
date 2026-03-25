@@ -20,7 +20,7 @@ export const initializeEmailTransporter = () => {
       port: env.EMAIL_PORT,
       secure: env.EMAIL_SECURE === "true",
       auth: {
-        user: "env.EMAIL.USER",
+        user: env.EMAIL.USER,
         pass: env.EMAIL.PASSWORD,
       },
     });
