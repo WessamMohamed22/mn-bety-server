@@ -18,7 +18,6 @@ export const MESSAGES = {
     PASSWORD_CHANGED: "Your password has been changed successfully.",
     PASSWORD_RESET_SUCCESS: "Password reset successful. Please login again.",
     INVALID_CURRENT_PASSWORD: "The current password you entered is incorrect.",
-EMAIL_VERIFIED: "Email verified successfully.",  
 
     // 401 - authentication errors
     LOGIN_FAILED: "Invalid email or password",
@@ -48,7 +47,9 @@ EMAIL_VERIFIED: "Email verified successfully.",
 
     WELCOME_SENT: "Welcome email sent successfully.",
     VERIFICATION_SENT: "Verification email sent. Please check your inbox.",
-    EMAIL_VERIFIED: "Email verified successfully.",  
+    EMAIL_NOT_VERIFIED:
+      "Please verify your email address to access this feature.",
+    EMAIL_VERIFIED: "Email verified successfully.",
     EMAIL_ALREADY_VERIFIED: "Email is already verified.",
     VERIFICATION_EMAIL_RECENTLY_SENT:
       "Please wait before requesting another verification email.",
