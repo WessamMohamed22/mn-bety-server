@@ -8,7 +8,10 @@ import {
   approveSeller,
   toggleSellerStatus,
   upgradeToSeller,
-  deleteSellerAccount
+  deleteSellerAccount,
+  getPublicSellers,
+  getPublicSellerProfile,
+
 } from "./seller.controller.js";
 import {
   validateUpdateProfile,
@@ -20,8 +23,13 @@ import { verifyPermissionsMW } from "../../middlewares/verifyPermissionsMW.js";
 import { uploadSellerLogo }    from "../../middlewares/upload.middleware.js";
 import { ROLES }               from "../../constants/roles.js";
 
+
+
 const router = express.Router();
 
+// ─── Public Routes ──────────────────────────────────────────
+router.get("/public", getPublicSellers);
+router.get("/public/:id", getPublicSellerProfile);
 router.use(verifyAccessMW);
 
 // ─── Seller (self) ────────────────────────────────────────────────────────────
