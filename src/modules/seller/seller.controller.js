@@ -5,6 +5,7 @@ import { successResponse, createdResponse } from "../../utils/apiResponse.util.j
 import { createBadRequestError } from "../../errors/error.factory.js";
 import { MESSAGES } from "../../constants/messages.js";
 
+
 // ─── Seller (self) ────────────────────────────────────────────────────────────
 
 export const getMySellerProfile = asyncHandler(async (req, res) => {
@@ -58,6 +59,21 @@ export const deleteSellerAccount = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .json(successResponse({ accessToken }, "Seller account deleted successfully."));
+});
+// ─── Public ───────────────────────────────────────────────────────────────────
+
+export const getPublicSellers = asyncHandler(async (req, res) => {
+  const result = await SellerService.getPublicSellers(req.query);
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse(result, MESSAGES.SELLER.FETCHED_ALL));
+});
+
+export const getPublicSellerProfile = asyncHandler(async (req, res) => {
+  const seller = await SellerService.getPublicSellerProfile(req.params.id);
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse({ seller }, MESSAGES.SELLER.FETCHED));
 });
 
 // ─── Admin ────────────────────────────────────────────────────────────────────

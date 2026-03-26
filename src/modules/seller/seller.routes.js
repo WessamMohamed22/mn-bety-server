@@ -8,7 +8,10 @@ import {
   approveSeller,
   toggleSellerStatus,
   upgradeToSeller,
-  deleteSellerAccount
+  deleteSellerAccount,
+  getPublicSellers,
+  getPublicSellerProfile,
+
 } from "./seller.controller.js";
 import {
   validateUpdateProfile,
@@ -21,8 +24,13 @@ import { uploadSellerLogo }    from "../../middlewares/upload.middleware.js";
 import { ROLES }               from "../../constants/roles.js";
 import { requireVerifiedEmailMW } from "../../middlewares/requireVerifiedEmailMW.js";
 
+
+
 const router = express.Router();
 
+// ─── Public Routes ──────────────────────────────────────────
+router.get("/public", getPublicSellers);
+router.get("/public/:id", getPublicSellerProfile);
 router.use(verifyAccessMW);
 router.use(requireVerifiedEmailMW); 
 
