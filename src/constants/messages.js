@@ -53,6 +53,8 @@ export const MESSAGES = {
     EMAIL_ALREADY_VERIFIED: "Email is already verified.",
     VERIFICATION_EMAIL_RECENTLY_SENT:
       "Please wait before requesting another verification email.",
+    EMAIL_PENDING_VERIFICATION:
+      "This email is already registered but not verified. Please check your inbox or wait for the token to expire.",
     INVALID_VERIFICATION_TOKEN: "Verification token is invalid or expired.",
     RESET_LINK_SENT: "Password reset link sent to your email.",
 

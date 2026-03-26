@@ -42,7 +42,20 @@ import {
 export const registerUser = async (userData) => {
   // 1. check if email already used
   const emailExist = await User.findOne({ email: userData.email }).exec();
-  if (emailExist) throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
+  if (emailExist) {
+    // if verified: block registering
+    if (emailExist.emailVerified) {
+      throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
+    }
+
+    // if unverified + token expired: delete old account, allow re-register
+    if (emailExist.emailVerificationToken?.expireAt < new Date()) {
+      await emailExist.deleteOne();
+    } else {
+      // unverified but token still valid → tell them to check inbox
+      throw createConflictError(MESSAGES.EMAIL.EMAIL_PENDING_VERIFICATION);
+    }
+  }
 
   // 2. create object_id for user
   const userId = new mongoose.Types.ObjectId();
@@ -350,12 +363,12 @@ export const refreshTokens = async (currentRefreshToken) => {
     roles: user.roles,
   });
   const refreshToken = generateRefreshToken({ userId: user._id });
-  
+
   // 5. remove used token + clean up expired tokens
   user.refreshTokens = user.refreshTokens.filter(
     (rt) => rt.token !== hashedToken && rt.expireAt > new Date()
   );
-  
+
   // 6. hash new token and add it with expire date & save
   const hashedNewToken = hashValue(refreshToken);
   user.refreshTokens.push({
@@ -390,24 +403,24 @@ export const changePassword = async (
   const valid = await verifyPassword(currentPassword, user.password);
   if (!valid)
     throw createUnauthorizedError(MESSAGES.AUTH.INVALID_CURRENT_PASSWORD);
-  
+
   // 3. make sure new password is not same as old one
   const isSame = await verifyPassword(newPassword, user.password);
   if (isSame) throw createBadRequestError(MESSAGES.AUTH.SAME_PASSWORD);
-  
+
   // 4. add newPassword in user and remember it will hash in model !!!
   user.password = newPassword;
-  
+
   // 5. invalidate all refresh tokens for security except the current device !!!
   let currentHashToken;
   if (refreshToken) {
     currentHashToken = hashValue(refreshToken);
   }
-  
+
   user.refreshTokens = currentHashToken
     ? user.refreshTokens.filter((rtoken) => rtoken.token === currentHashToken)
     : [];
-  
+
   // 6. save changes in DB
   await user.save();
 };
@@ -464,7 +477,7 @@ export const resetPassword = async (token, newPassword) => {
 
   // 3. add newPassword in user and remember it will hash in model !!!!
   user.password = newPassword;
-  
+
   // 4. clear reset token fields
   user.passwordResetToken.token = null;
   user.passwordResetToken.expireAt = null;
