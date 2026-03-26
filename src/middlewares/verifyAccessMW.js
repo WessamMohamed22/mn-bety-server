@@ -1,9 +1,9 @@
 import asyncHandler from "./asyncHandler.js";
+import User from "../DB/models/user.model.js";
 import { HEADERS } from "../constants/headers.js";
 import { MESSAGES } from "../constants/messages.js";
 import { createUnauthorizedError } from "../errors/error.factory.js";
 import { verifyAccessToken } from "../services/token.service.js";
-import User from "../DB/models/user.model.js";
 
 // Verifies JWT access token & attaches decoded payload to req.user
 export const verifyAccessMW = asyncHandler(async (req, res, next) => {
