@@ -44,6 +44,8 @@ export const env = {
     USER: process.env.EMAIL_USER,
     PASSWORD: process.env.EMAIL_PASSWORD,
     FROM: process.env.EMAIL_FROM,
+    TLS_REJECT_UNAUTHORIZED:
+      process.env.EMAIL_TLS_REJECT_UNAUTHORIZED !== "false",
   },
 
   // Cloudinary
@@ -65,4 +67,5 @@ export const env = {
   // Development flags
   isDevelopment: process.env.NODE_ENV === "development",
   isProduction: process.env.NODE_ENV === "production",
+
 };

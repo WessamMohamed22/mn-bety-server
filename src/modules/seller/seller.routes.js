@@ -19,10 +19,12 @@ import { verifyAccessMW }      from "../../middlewares/verifyAccessMW.js";
 import { verifyPermissionsMW } from "../../middlewares/verifyPermissionsMW.js";
 import { uploadSellerLogo }    from "../../middlewares/upload.middleware.js";
 import { ROLES }               from "../../constants/roles.js";
+import { requireVerifiedEmailMW } from "../../middlewares/requireVerifiedEmailMW.js";
 
 const router = express.Router();
 
 router.use(verifyAccessMW);
+router.use(requireVerifiedEmailMW); 
 
 // ─── Seller (self) ────────────────────────────────────────────────────────────
 router.get("/me",

@@ -18,6 +18,9 @@ export const initializeEmailTransporter = () => {
     host: env.EMAIL.HOST || "smtp.gmail.com",
     port: env.EMAIL.PORT,
     secure: env.EMAIL.SECURE === "true",
+    tls: {
+      rejectUnauthorized: env.EMAIL.TLS_REJECT_UNAUTHORIZED,
+    },
     auth: {
       user: env.EMAIL.USER,
       pass: env.EMAIL.PASSWORD,
@@ -33,9 +36,9 @@ export const verifyEmailTransporter = async () => {
     await transporter.verify();
   } catch (err) {
     console.error("Mail server connection failed — check EMAIL config");
-    if (env.isDevelopment) {
-      process.exit(1);
-    }
+    // if (env.isDevelopment) {
+    //   process.exit(1);
+    // }
   }
 };
 
@@ -52,13 +55,14 @@ export const sendEmail = async ({ to, subject, html }) => {
   try {
     // 1. Send email via transporter
     await transporter.sendMail({
-      from: env.EMAIL_FROM,
+      from: env.EMAIL.FROM,
       to,
       subject,
       html,
     });
   } catch (error) {
     // 2. Throw internal error if sending fails
+    console.log(error)
     throw createInternalError(MESSAGES.ERROR.FAILED_TO_SEND_EMAIL);
   }
 };

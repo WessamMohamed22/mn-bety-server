@@ -1,4 +1,5 @@
-import { MESSAGES } from "../constants/messages";
+import { MESSAGES } from "../constants/messages.js";
+import { createForbiddenError } from "../errors/error.factory.js";
 
 export const requireVerifiedEmailMW = (req, res, next) => {
   // 1. check if user email is verified
