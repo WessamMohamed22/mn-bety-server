@@ -33,7 +33,7 @@ export const verifyEmailTransporter = async () => {
     await transporter.verify();
   } catch (err) {
     console.error("Mail server connection failed — check EMAIL config");
-    if (env.isProduction) {
+    if (env.isDevelopment) {
       process.exit(1);
     }
   }

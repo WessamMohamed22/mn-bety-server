@@ -17,5 +17,14 @@ export const verifyAccessMW = asyncHandler(async (req, res, next) => {
 
   // 3. store decoded data in request:
   req.decoded = verifyAccessToken(accessToken);
+  if (!req.decoded?.userId)
+    throw createUnauthorizedError(MESSAGES.AUTH.INVALID_TOKEN);
+
+  // 4. fetch user and attach to request
+  req.user = await User.findById(req.decoded.userId)
+    .select("emailVerified roles")
+    .exec();
+
+  if (!req.user) throw createUnauthorizedError(MESSAGES.AUTH.INVALID_TOKEN);
   next();
 });

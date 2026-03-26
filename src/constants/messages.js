@@ -47,6 +47,15 @@ export const MESSAGES = {
 
     WELCOME_SENT: "Welcome email sent successfully.",
     VERIFICATION_SENT: "Verification email sent. Please check your inbox.",
+    EMAIL_NOT_VERIFIED:
+      "Please verify your email address to access this feature.",
+    EMAIL_VERIFIED: "Email verified successfully.",
+    EMAIL_ALREADY_VERIFIED: "Email is already verified.",
+    VERIFICATION_EMAIL_RECENTLY_SENT:
+      "Please wait before requesting another verification email.",
+    EMAIL_PENDING_VERIFICATION:
+      "This email is already registered but not verified. Please check your inbox or wait for the token to expire.",
+    INVALID_VERIFICATION_TOKEN: "Verification token is invalid or expired.",
     RESET_LINK_SENT: "Password reset link sent to your email.",
 
     SEND_FAILED: "Failed to send email. Please try again later.",
@@ -121,16 +130,16 @@ export const MESSAGES = {
       "Products can only be added to sub-categories, not main categories.",
   },
 
-SELLER: {
-  NOT_FOUND:   "Seller profile not found.",
-  DELETED:     "Seller account deleted successfully.",
-  FETCHED:     "Seller profile fetched successfully.",
-  FETCHED_ALL: "Sellers fetched successfully.",
-  UPDATED:     "Seller profile updated successfully.",
-  APPROVED:    "Seller approved successfully.",
-  ACTIVATED:   "Seller is now active.",
-  DEACTIVATED: "Seller is now inactive.",
-},
+  SELLER: {
+    NOT_FOUND: "Seller profile not found.",
+    DELETED: "Seller account deleted successfully.",
+    FETCHED: "Seller profile fetched successfully.",
+    FETCHED_ALL: "Sellers fetched successfully.",
+    UPDATED: "Seller profile updated successfully.",
+    APPROVED: "Seller approved successfully.",
+    ACTIVATED: "Seller is now active.",
+    DEACTIVATED: "Seller is now inactive.",
+  },
 
   CART: {
     FETCHED: "Cart fetched successfully.",

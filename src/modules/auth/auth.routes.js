@@ -11,6 +11,8 @@ const router = express.Router();
 // ----------------- Public Routes -----------------
 router.post("/register", AuthController.register);
 
+router.post("/verify-email", AuthController.verifyEmail);
+
 router.post("/login", AuthController.login);
 
 router.post("/logout", AuthController.logout);
@@ -26,10 +28,13 @@ router.use(verifyAccessMW);
 
 router.post("/change-password", AuthController.changePassword);
 
+router.post("/resend-verification", AuthController.resendVerification);
+
 router.get("/me", AuthController.getMe);
 
 router.patch("/me", AuthController.updateMe);
 
 router.delete("/delete-account", AuthController.deleteAccount);
+
 
 export default router;
