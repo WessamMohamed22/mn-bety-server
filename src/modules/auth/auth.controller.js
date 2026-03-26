@@ -48,10 +48,45 @@ export const register = asyncHandler(async (req, res) => {
 // ------------------------------------------------------------
 
 /**
+ * @desc    Verify email using token from link
+ * @route   POST /api/auth/verify-email
+ * @access  Public
+ */
+export const verifyEmail = asyncHandler(async (req, res) => {
+  // 1. check for token from body param
+  const { token } = req.body;
+  if (!token) throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+
+  // 2. verify email service
+  await AuthService.verifyEmail(token);
+
+  // 3. return success
+  return res.json(successResponse(null, MESSAGES.EMAIL.EMAIL_VERIFIED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Resend verification email
+ * @route   POST /api/auth/resend-verification
+ * @access  Private
+ */
+export const resendVerification = asyncHandler(async (req, res) => {
+  // 1. resend verification email service
+  await AuthService.resendVerificationEmail(req.decoded.userId);
+
+  // 2. return success
+  return res.json(successResponse(null, MESSAGES.EMAIL.VERIFICATION_SENT));
+});
+
+// ------------------------------------------------------------
+
+/**
  * @desc    Login user and return access token
  * @route   POST /api/auth/login
  * @access  Public
  */
+// 1. check for userId in body decoded
 export const login = asyncHandler(async (req, res) => {
   // 1. check for request body
   if (!req.body) createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
@@ -130,7 +165,6 @@ export const refreshToken = asyncHandler(async (req, res) => {
  * @route   PATCH /api/auth/change-password
  * @access  Private
  */
-
 export const changePassword = asyncHandler(async (req, res) => {
   // 1. validate current and new password in body
   const { currentPassword, newPassword } = req.body;

@@ -13,6 +13,7 @@ export const env = {
   // AUTH
   AUTH: {
     RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_EXPIRE || "15m",
+    EMAIL_VERIFICATION_EXPIRE: process.env.EMAIL_VERIFICATION_EXPIRE || "24h",
   },
 
   // JWT
@@ -42,7 +43,7 @@ export const env = {
     SECURE: process.env.EMAIL_SECURE === "true",
     USER: process.env.EMAIL_USER,
     PASSWORD: process.env.EMAIL_PASSWORD,
-    FROM: process.env.FROM,
+    FROM: process.env.EMAIL_FROM,
   },
 
   // Cloudinary
