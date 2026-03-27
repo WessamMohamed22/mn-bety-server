@@ -9,7 +9,7 @@ export const env = {
 
   // Database
   DATABASE_URI: process.env.DATABASE_URI,
-
+  REDIS_URL: process.env.REDIS_URL ,
   // AUTH
   AUTH: {
     RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_EXPIRE || "15m",

@@ -1,4 +1,4 @@
-import Cart from "../../DB/models/cart.model.js";
+import redisClient from "../../config/redis.js";
 import Product from "../../DB/models/product.model.js";
 import { MESSAGES } from "../../constants/messages.js";
 import {
@@ -6,16 +6,87 @@ import {
   createNotFoundError,
 } from "../../errors/error.factory.js";
 
+// Cart will expire in 7 days (in seconds)
+const CART_TTL = 7 * 24 * 60 * 60; 
+
+// Helper: Get cart key
+const getCartKey = (userId) => `cart:${userId}`;
+
+const isValidQuantity = (quantity) =>
+  Number.isInteger(quantity) && quantity > 0;
+
+const parseCartItemsSafely = (cartData) => {
+  const parsed = JSON.parse(cartData);
+  if (!Array.isArray(parsed)) return [];
+  return parsed;
+};
+
 /**
- * @desc    Get user's cart
+ * @desc    Get user's cart (with Dynamic Stock Validation)
  * @param   {string} userId
  */
 export const getUserCart = async (userId) => {
-  const cart = await Cart.findOne({ userId }).populate({
-    path: "items.product",
-    select: "name price discountPrice images slug stock seller",
-  }).exec();
-  return cart || { userId, items: [] };
+  const key = getCartKey(userId);
+  const cartData = await redisClient.get(key);
+  
+  if (!cartData) return { userId, items: [] };
+
+  let parsedCart;
+  try {
+    parsedCart = parseCartItemsSafely(cartData); // Array of { productId, quantity }
+  } catch {
+    await redisClient.del(key);
+    return { userId, items: [] };
+  }
+
+  if (parsedCart.length === 0) return { userId, items: [] };
+
+  const productIds = parsedCart.map(item => item.productId);
+
+  // Fetch live products from MongoDB to check current stock & prices
+  const liveProducts = await Product.find({ _id: { $in: productIds } })
+    .select("name price discountPrice images slug stock seller isActive")
+    .exec();
+
+  const liveProductsMap = new Map(
+    liveProducts.map((product) => [product._id.toString(), product])
+  );
+
+  const validItems = [];
+  let cartModified = false;
+
+  for (const item of parsedCart) {
+    const product = liveProductsMap.get(item.productId);
+    
+    // If product was deleted, deactivated, or stock is 0, we drop it (cartModified = true)
+    if (!product || !product.isActive || product.stock === 0) {
+      cartModified = true;
+      continue; 
+    }
+
+    // If user wants 5 but only 2 are left, reduce their cart quantity
+    let finalQuantity = item.quantity;
+    if (finalQuantity > product.stock) {
+      finalQuantity = product.stock;
+      cartModified = true;
+    }
+
+    validItems.push({
+      product: product, // Send populated product to frontend
+      quantity: finalQuantity
+    });
+  }
+
+  // If we had to remove/reduce items because of stock, update Redis silently
+  if (cartModified) {
+    const updatedRedisItems = validItems.map(item => ({
+      productId: item.product._id.toString(),
+      quantity: item.quantity
+    }));
+    await redisClient.setEx(key, CART_TTL, JSON.stringify(updatedRedisItems));
+  }
+
+  return { userId, items: validItems };
 };
 
 /**
@@ -25,84 +96,113 @@ export const getUserCart = async (userId) => {
  * @param   {number} quantity
  */
 export const addToCart = async (userId, productId, quantity = 1) => {
+  if (!isValidQuantity(quantity)) {
+    throw createBadRequestError(MESSAGES.VALIDATION.INVALID_QUANTITY);
+  }
+
+  // 1. Check MongoDB for stock first
   const product = await Product.findById(productId).exec();
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
   if (quantity > product.stock)
     throw createBadRequestError(MESSAGES.CART.OUT_OF_STOCK(product.stock));
 
-  let cart = await Cart.findOne({ userId }).exec();
-  if (!cart) {
-    cart = await Cart.create({ userId, items: [{ product: productId, quantity }] });
-    return cart;
+  const key = getCartKey(userId);
+  const cartData = await redisClient.get(key);
+  let items = [];
+  if (cartData) {
+    try {
+      items = parseCartItemsSafely(cartData);
+    } catch {
+      await redisClient.del(key);
+      items = [];
+    }
   }
 
-  const productIndex = cart.items.findIndex(
-    (item) => item.product.toString() === productId.toString()
-  );
+  // 2. Check if item already in Redis cart
+  const existingItemIndex = items.findIndex(item => item.productId === productId.toString());
 
-  if (productIndex > -1) {
-    const newQuantity = cart.items[productIndex].quantity + quantity;
-    if (product.stock < newQuantity)
-      throw createBadRequestError(MESSAGES.CART.STOCK_LIMIT(product.stock));
-    cart.items[productIndex].quantity = newQuantity;
+  if (existingItemIndex > -1) {
+    const newQuantity = items[existingItemIndex].quantity + quantity;
+    if (newQuantity > product.stock) {
+      throw createBadRequestError(MESSAGES.CART.OUT_OF_STOCK(product.stock));
+    }
+    items[existingItemIndex].quantity = newQuantity;
   } else {
-    cart.items.push({ product: productId, quantity });
+    items.push({ productId: productId.toString(), quantity });
   }
 
-  await cart.save();
-  return cart;
+  // 3. Save to Redis with 7-day expiration
+  await redisClient.setEx(key, CART_TTL, JSON.stringify(items));
+
+  // Return the fully populated cart using our read function
+  return await getUserCart(userId);
 };
 
 /**
- * @desc    Update the exact quantity of an item in the cart
- * @param   {string} userId
- * @param   {string} productId
- * @param   {number} quantity - The exact new quantity
+ * @desc    Update cart item quantity directly
  */
 export const updateCartItemQuantity = async (userId, productId, quantity) => {
-  const cart = await Cart.findOne({ user: userId }).exec();
-  if (!cart) throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
-
-  const productIndex = cart.items.findIndex(
-    (item) => item.product.toString() === productId.toString()
-  );
-  if (productIndex === -1) throw createNotFoundError(MESSAGES.CART.ITEM_NOT_FOUND);
+  if (!isValidQuantity(quantity)) {
+    throw createBadRequestError(MESSAGES.VALIDATION.INVALID_QUANTITY);
+  }
 
   const product = await Product.findById(productId).exec();
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
-  if (product.stock < quantity)
+  if (quantity > product.stock)
     throw createBadRequestError(MESSAGES.CART.OUT_OF_STOCK(product.stock));
 
-  cart.items[productIndex].quantity = quantity;
-  await cart.save();
-  return cart;
+  const key = getCartKey(userId);
+  const cartData = await redisClient.get(key);
+  if (!cartData) throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
+
+  let items;
+  try {
+    items = parseCartItemsSafely(cartData);
+  } catch {
+    await redisClient.del(key);
+    throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
+  }
+
+  const itemIndex = items.findIndex(item => item.productId === productId.toString());
+  
+  if (itemIndex === -1) throw createNotFoundError(MESSAGES.CART.ITEM_NOT_FOUND);
+
+  items[itemIndex].quantity = quantity;
+  await redisClient.setEx(key, CART_TTL, JSON.stringify(items));
+
+  return await getUserCart(userId);
 };
 
 /**
  * @desc    Remove an item from the cart
- * @param   {string} userId
- * @param   {string} productId
  */
 export const removeFromCart = async (userId, productId) => {
-  const cart = await Cart.findOne({ userId }).exec();
-  if (!cart) throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
+  const key = getCartKey(userId);
+  const cartData = await redisClient.get(key);
+  if (!cartData) return await getUserCart(userId);
 
-  cart.items = cart.items.filter(
-    (item) => item.product.toString() !== productId.toString()
-  );
+  let items;
+  try {
+    items = parseCartItemsSafely(cartData);
+  } catch {
+    await redisClient.del(key);
+    return { userId, items: [] };
+  }
 
-  await cart.save();
-  return cart;
+  items = items.filter(item => item.productId !== productId.toString());
+
+  if (items.length === 0) {
+    await redisClient.del(key);
+  } else {
+    await redisClient.setEx(key, CART_TTL, JSON.stringify(items));
+  }
+  return await getUserCart(userId);
 };
 
 /**
- * @desc    Empty the entire cart
- * @param   {string} userId
+ * @desc    Clear entire cart (e.g., after successful checkout)
  */
 export const clearCart = async (userId) => {
-  const cart = await Cart.findOne({ userId }).exec();
-  if (!cart) throw createNotFoundError(MESSAGES.CART.NOT_FOUND);
-  cart.items = [];
-  await cart.save();
-  return cart;
+  await redisClient.del(getCartKey(userId));
+  return { userId, items: [] };
 };

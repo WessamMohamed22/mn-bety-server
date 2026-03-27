@@ -1,35 +1,34 @@
 import mongoose from "mongoose";
 import Order from "../../../DB/models/orderItem.model.js";
-import Cart from "../../../DB/models/cart.model.js";
+// import Cart from "../../../DB/models/cart.model.js";
 import Product from "../../../DB/models/product.model.js";
 import * as PaymentService from "./payment.service.js";
+import * as CartService from "../../cart/cart.service.js";
 import {
   createBadRequestError,
   createNotFoundError,
 } from "../../../errors/error.factory.js";
 import { MESSAGES } from "../../../constants/messages.js";
-export const getValidatedCart = async (userId) => {
-  const cart = await Cart.findOne({ user: userId })
-    .populate("items.product")
-    .exec();
 
-  if (!cart || cart.items.length === 0)
-    throw createBadRequestError(MESSAGES.order.cartEmpty);
+export const getValidatedCart = async (userId) => {
+  // 1. Read from Redis instead of MongoDB!
+  const cart = await CartService.getUserCart(userId);
+  
+  if (!cart || cart.items.length === 0) throw createBadRequestError(MESSAGES.order.cartEmpty);
 
   let totalPrice = 0;
   const orderItems = [];
 
   for (const item of cart.items) {
-    const product = item.product;
+    const product = item.product; // Already populated dynamically by our Redis service!
     if (!product) throw createNotFoundError(MESSAGES.order.productNotFound);
+    
+    // (Optional) Extra safety check, though Redis service already checks stock
     if (product.stock < item.quantity) {
-      throw createBadRequestError(
-        MESSAGES.order.insufficientStock(product.stock, product.name),
-      );
+      throw createBadRequestError(MESSAGES.order.insufficientStock(product.stock, product.name));
     }
 
-    const itemPrice =
-      product.discountPrice > 0 ? product.discountPrice : product.price;
+    const itemPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
     totalPrice += itemPrice * item.quantity;
 
     orderItems.push({
@@ -41,10 +40,10 @@ export const getValidatedCart = async (userId) => {
     });
   }
 
-  return { cart, orderItems, totalPrice };
+  return { userId, orderItems, totalPrice };
 };
 
-const finalizeOrder = async (order, cart) => {
+const finalizeOrder = async (order, userId) => {
   const bulkOptions = order.items.map((item) => ({
     updateOne: {
       filter: { _id: item.product },
@@ -53,12 +52,12 @@ const finalizeOrder = async (order, cart) => {
   }));
   await Product.bulkWrite(bulkOptions);
 
-  cart.items = [];
-  await cart.save();
+  // Clear Redis cart after successful order
+  await CartService.clearCart(userId);
 };
 
 export const createCashOrder = async (userId, shippingAddress) => {
-  const { cart, orderItems, totalPrice } = await getValidatedCart(userId);
+  const { orderItems, totalPrice } = await getValidatedCart(userId);
 
   const order = await Order.create({
     user: userId,
@@ -69,7 +68,7 @@ export const createCashOrder = async (userId, shippingAddress) => {
     shippingAddress,
   });
 
-  await finalizeOrder(order, cart);
+  await finalizeOrder(order, userId);
   return order;
 };
 export const createStripeOrder = async (
@@ -77,7 +76,7 @@ export const createStripeOrder = async (
   shippingAddress,
   stripePaymentIntentId,
 ) => {
-  const { cart, orderItems, totalPrice } = await getValidatedCart(userId);
+  const { orderItems, totalPrice } = await getValidatedCart(userId);
 
   const order = await Order.create({
     user: userId,
@@ -89,7 +88,7 @@ export const createStripeOrder = async (
     stripePaymentIntentId, // Save the ID so we can refund it later!
   });
 
-  await finalizeOrder(order, cart);
+  await finalizeOrder(order, userId);
   return order;
 };
 
