@@ -1,5 +1,5 @@
 import { createClient } from "redis";
-import { env } from "./env";
+import { env } from "./env.js";
 
 // Connects to default localhost:6379, or your cloud Redis URL
 const redisClient = createClient({
