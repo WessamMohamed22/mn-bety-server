@@ -47,7 +47,8 @@ export const safeUserData = (user, isAdmin = false) => {
 export const guardProtectedRoles = (targetUser) => {
   // 1. check if target user has a protected role
   const protectedRoles = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
-  const isProtected = targetUser.some((r) => protectedRoles.includes(r));
+  console.log(targetUser.roles);
+  const isProtected = targetUser.roles.some((r) => protectedRoles.includes(r));
 
   // 2. throw if protected
   if (isProtected) throw createForbiddenError(MESSAGES.ADMIN.FORBIDDEN_TARGET);
