@@ -3,7 +3,7 @@ import Seller from "../../../DB/models/saller.model.js";
 import User from "../../../DB/models/user.model.js";
 import { MESSAGES } from "../../../constants/messages.js";
 import { createNotFoundError } from "../../../errors/error.factory.js";
-import { safeUserData } from "../helpers/user.helper.js";
+import { safeUserData } from "../../../helpers/user.helper.js";
 
 // ============================================================
 //                      USER SERVICE
@@ -18,10 +18,9 @@ export const getMe = async (userId) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
-
+  
   // 2. return safe user data
-  const { _id, fullName, email, phone, roles } = user;
-  return { userId: _id, fullName, email, phone, roles };
+  return safeUserData(user);
 };
 
 // ------------------------------------------------------------
