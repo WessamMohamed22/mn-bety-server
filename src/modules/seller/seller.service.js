@@ -188,6 +188,54 @@ export const deleteSellerAccount = async (userId) => {
 
   return { accessToken };
 };
+// ============================================================
+//                    PUBLIC SERVICES
+// ============================================================
+
+
+/**
+ * @desc    Public — Get all active sellers with Search
+ */
+export const getPublicSellers = async ({ page = 1, limit = 10, search } = {}) => {
+  const skip = (page - 1) * limit;
+    const filter = { isActive: true };
+  if (search) {
+    const users = await User.find({
+      fullName: { $regex: search, $options: "i" }, 
+      }).select("_id").exec();
+
+    filter.userId = { $in: users.map((u) => u._id) };
+  }
+
+  const total = await Seller.countDocuments(filter);
+  const sellers = await Seller.find(filter)
+    .populate("userId", "fullName email") 
+    .select("description location logo createdAt isApproved isActive rating") 
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit))
+    .exec();
+
+  return {
+    sellers,
+    total,
+    page: Number(page),
+    pages: Math.ceil(total / limit),
+  };
+};
+
+/**
+ * @desc    Public — Get single seller profile & info
+ */
+export const getPublicSellerProfile = async (sellerId) => {
+  const seller = await Seller.findOne({ _id: sellerId, isActive: true })
+    .populate("userId", "fullName")
+    .select("description location logo")
+    .exec();
+
+  if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
+  return seller;
+};
 
 // ============================================================
 //                     ADMIN SERVICES
