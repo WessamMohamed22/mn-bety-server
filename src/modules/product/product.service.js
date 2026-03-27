@@ -102,20 +102,26 @@ export const getAllProducts = async (query) => {
     featured,
   } = query;
 
-  // 1. build filter — public only sees approved + active products
-  const filter = { isApproved: true, isActive: true };
+  const filter = { 
+    isApproved: true, 
+    isActive: true 
+  };
 
   if (category) {
     const categoryIds = await getCategoryWithChildren(category);
     filter.category = { $in: categoryIds };
   }
+  
   if (seller) filter.seller = seller;
+  
   if (featured !== undefined) filter.isFeatured = featured;
+
   if (minPrice !== undefined || maxPrice !== undefined) {
     filter.price = {};
-    if (minPrice !== undefined) filter.price.$gte = minPrice;
-    if (maxPrice !== undefined) filter.price.$lte = maxPrice;
+    if (minPrice !== undefined) filter.price.$gte = Number(minPrice);
+    if (maxPrice !== undefined) filter.price.$lte = Number(maxPrice);
   }
+
   if (search) {
     filter.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -123,18 +129,24 @@ export const getAllProducts = async (query) => {
     ];
   }
 
-  // 2. pagination
+  // 3. Pagination & Execution
   const skip = (page - 1) * limit;
   const total = await Product.countDocuments(filter);
 
-  // 3. fetch
   const products = await Product.find(filter)
     .populate("category", "name slug")
-   .populate("seller", "user rating location") 
+    .populate({
+      path: "seller",
+      select: "rating location userId",
+      populate: {
+        path: "userId",
+        select: "fullName phoneNumber",
+      },
+    })
     .sort(sort)
     .skip(skip)
-    .limit(limit)
-    .exec();
+    .limit(Number(limit))
+    .lean();
 
   return {
     products,
@@ -154,23 +166,19 @@ export const getProductByIdOrSlug = async (idOrSlug) => {
   const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
   const query = isObjectId ? { _id: idOrSlug } : { slug: idOrSlug };
 
- 
   const product = await Product.findOne(query)
     .populate("category", "name slug")
     .populate({
       path: "seller",
-      select: "description logo rating user location", 
-      options: { strictPopulate: false },
+      select: "description logo rating userId location", 
       populate: {
-        path: "user",
-        select: "fullName",
-        options: { strictPopulate: false }
+        path: "userId",
+        select: "fullName phoneNumber address", 
       }
     })
     .exec();
 
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
-
   return product;
 };
 
