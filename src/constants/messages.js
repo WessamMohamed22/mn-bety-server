@@ -6,6 +6,7 @@ export const MESSAGES = {
     INVALID_PHONE: "Invalid phone number format",
     REQUIRED_FIELDS: "All required fields must be provided",
     INVALID_ID: "Invalid ID format",
+    INVALID_QUANTITY: "Quantity must be a positive integer.",
   },
 
   AUTH: {

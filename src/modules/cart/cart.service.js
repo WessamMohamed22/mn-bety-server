@@ -97,7 +97,7 @@ export const getUserCart = async (userId) => {
  */
 export const addToCart = async (userId, productId, quantity = 1) => {
   if (!isValidQuantity(quantity)) {
-    throw createBadRequestError("Quantity must be a positive integer.");
+    throw createBadRequestError(MESSAGES.VALIDATION.INVALID_QUANTITY);
   }
 
   // 1. Check MongoDB for stock first
@@ -143,7 +143,7 @@ export const addToCart = async (userId, productId, quantity = 1) => {
  */
 export const updateCartItemQuantity = async (userId, productId, quantity) => {
   if (!isValidQuantity(quantity)) {
-    throw createBadRequestError("Quantity must be a positive integer.");
+    throw createBadRequestError(MESSAGES.VALIDATION.INVALID_QUANTITY);
   }
 
   const product = await Product.findById(productId).exec();
@@ -165,7 +165,7 @@ export const updateCartItemQuantity = async (userId, productId, quantity) => {
 
   const itemIndex = items.findIndex(item => item.productId === productId.toString());
   
-  if (itemIndex === -1) throw createNotFoundError("Item not found in cart");
+  if (itemIndex === -1) throw createNotFoundError(MESSAGES.CART.ITEM_NOT_FOUND);
 
   items[itemIndex].quantity = quantity;
   await redisClient.setEx(key, CART_TTL, JSON.stringify(items));
