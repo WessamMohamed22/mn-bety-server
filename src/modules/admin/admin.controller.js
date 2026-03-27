@@ -46,3 +46,54 @@ export const getUserById = asyncHandler(async (req, res) => {
   // 3. return success response
   return res.json(successResponse({ user }, MESSAGES.USER.FETCHED));
 });
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Change a user's role
+ * @route   PATCH /api/admin/users/:id/role
+ * @access  Private - Admin
+ */
+export const updateUserRole = asyncHandler(async (req, res) => {
+  // 1. validate role exists in body
+  const { role } = req.body;
+  if (!role) throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+
+  // 2. extract user id from route param
+  const { id } = req.params;
+
+  // 3. update role from service
+  const user = await AdminService.updateUserRole(id, role);
+
+  // 4. return success response
+  return res.json(successResponse({ user }, MESSAGES.ADMIN.ROLE_UPDATED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Toggle user isActive status (suspend / unsuspend)
+ * @route   PATCH /api/admin/users/:id/status
+ * @access  Private - Admin
+ */
+export const toggleUserStatus = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. toggle status from service
+  const user = await AdminService.toggleUserStatus(id);
+
+  // 3. return success response
+  return res.json(successResponse({ user }, MESSAGES.ADMIN.STATUS_UPDATED));
+});
+
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------

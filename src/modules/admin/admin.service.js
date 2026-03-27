@@ -1,7 +1,8 @@
 import User from "../../DB/models/user.model.js";
 import { MESSAGES } from "../../constants/messages.js";
+import { ROLES } from "../../constants/roles.js";
 import { createNotFoundError } from "../../errors/error.factory.js";
-import { safeUserData } from "../../helpers/user.helper.js";
+import { guardProtectedRoles, safeUserData } from "../../helpers/user.helper.js";
 import { parseQuery } from "../../utils/data.util.js";
 import {
   getPagination,
@@ -82,3 +83,58 @@ export const getUserById = async (userId) => {
   // 3. return user data
   return safeUserData(user, true);
 };
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Change a user's role
+ * @param   {string} userId - Target user ID from route param
+ * @param   {string} role   - New role to assign
+ * @returns {Object} updated user document
+ */
+export const updateUserRole = async (userId, role) => {
+  // 1. validate role is allowed
+  if (!Object.values(ROLES).includes(role))
+    throw createBadRequestError(MESSAGES.ADMIN.INVALID_ROLE);
+
+  // 2. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // 3. guard against acting on protected accounts
+  guardProtectedRoles(user);
+
+  // 4. apply new role and save
+  if (!user.roles.includes(role)) {
+    user.roles.push(role);
+    await user.save();
+  }
+
+  // 5. return updated user
+  return user;
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Toggle user isActive status (suspend / unsuspend)
+ * @param   {string} userId - Target user ID from route param
+ * @returns {Object} updated user document
+ */
+export const toggleUserStatus = async (userId) => {
+  // 1. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.ADMIN.USER_NOT_FOUND);
+
+  // 2. guard against acting on protected accounts
+  guardProtectedRoles(user);
+
+  // 3. toggle isActive and save
+  user.isActive = !user.isActive;
+  await user.save();
+
+  // 4. return updated user
+  return user;
+};
+
+// ------------------------------------------------------------
