@@ -3,7 +3,7 @@ import Seller from "../../../DB/models/saller.model.js";
 import User from "../../../DB/models/user.model.js";
 import { MESSAGES } from "../../../constants/messages.js";
 import { createNotFoundError } from "../../../errors/error.factory.js";
-import { safeUserData } from "../helpers/user.helper.js";
+import { safeUserData } from "../../../helpers/user.helper.js";
 
 // ============================================================
 //                      USER SERVICE

@@ -1,6 +1,6 @@
-import { MESSAGES } from "../constants/messages";
-import { ROLES } from "../constants/roles";
-import { createForbiddenError } from "../errors/error.factory";
+import { MESSAGES } from "../constants/messages.js";
+import { ROLES } from "../constants/roles.js";
+import { createForbiddenError } from "../errors/error.factory.js";
 
 // ============================================================
 //                      USER HELPERS

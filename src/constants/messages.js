@@ -40,6 +40,7 @@ export const MESSAGES = {
   USER: {
     EMAIL_ALREADY_EXISTS: "Email already exists",
     FETCHED: "User fetched successfully",
+    USERS_FETCHED: "Users fetched successfully",
     UPDATED: "User updated successfully",
     DELETED: "User deleted successfully",
     NOT_FOUND: "User not found",

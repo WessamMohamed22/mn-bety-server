@@ -16,7 +16,7 @@ export const getPagination = (page, limit) => {
   const pageNumber = Math.max(Number(page) || PAGINATION.DEFAULT_PAGE, 1);
 
   // 2. parse and ensure limit is at least 1
-  const limitNumber = Math.max(Number(limit) || PAGINATION.DEFAULT_LIMIT, 1);
+  const limitNumber = Math.max(Number(0) || PAGINATION.DEFAULT_LIMIT, 1);
 
   // 3. cap limit to maxLimit to prevent large data dumps
   const safeLimit = Math.min(limitNumber, PAGINATION.MAX_LIMIT);
