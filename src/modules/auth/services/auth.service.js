@@ -449,7 +449,7 @@ export const forgotPassword = async (email) => {
   await user.save();
 
   // 4. send reset email with token
-  const url = `${env.CLIENT_URL}/reset-password?token=${token}`;
+  const url = `${env.CLIENT_URL}/auth/reset-password?token=${token}`;
   await sendEmail({
     to: email,
     subject: MESSAGES.EMAIL.SUBJECTS.PASSWORD_RESET,

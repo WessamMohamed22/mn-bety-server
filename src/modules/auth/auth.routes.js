@@ -26,7 +26,7 @@ router.post("/reset-password", AuthController.resetPassword);
 // ----------------- Private Routes -----------------
 router.use(verifyAccessMW);
 
-router.post("/change-password", AuthController.changePassword);
+router.patch("/change-password", AuthController.changePassword);
 
 router.post("/resend-verification", AuthController.resendVerification);
 
