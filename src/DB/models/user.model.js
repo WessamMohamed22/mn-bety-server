@@ -69,6 +69,8 @@ const userSchema = new mongoose.Schema(
       default: [ROLES.CUSTOMER],
     },
     isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
     lastLogin: Date,
   },
   { timestamps: true }
@@ -102,6 +104,6 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 
-const User = mongoose.model.User || mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 export default User;
