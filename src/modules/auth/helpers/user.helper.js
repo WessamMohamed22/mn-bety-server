@@ -8,6 +8,6 @@
  * @returns {Object} safe user data
  */
 export const safeUserData = (user) => {
-  const { _id, fullName, email, phone, roles } = user;
-  return { userId: _id, fullName, email, phone, roles };
+  const { _id, fullName, email, phone, roles,emailVerified  } = user;
+  return { userId: _id, fullName, email, phone, roles,emailVerified  };
 };
