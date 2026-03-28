@@ -2,6 +2,7 @@ import * as AdminService from "./admin.service.js";
 import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { successResponse } from "../../utils/apiResponse.util.js";
+import { HTTP_STATUS } from "../../constants/httpStatus.js";
 
 // ============================================================
 //                      ADMIN CONTROLLER
@@ -29,7 +30,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 
   // 4. return success response
   return res.json(
-    successResponse({ users, pagination }, MESSAGES.ADMIN.USERS_FETCHED)
+    successResponse({ users, pagination }, MESSAGES.USER.USERS_FETCHED)
   );
 });
 
@@ -101,12 +102,81 @@ export const toggleUserStatus = asyncHandler(async (req, res) => {
 });
 
 // ------------------------------------------------------------
+
+/**
+ * @desc    Manually mark a user's email as verified
+ * @route   PATCH /api/admin/users/:id/verify-email
+ * @access  Private - Admin
+ */
+export const verifyUserEmail = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. verify email from service
+  const user = await AdminService.verifyUserEmail(decoded, id);
+
+  // 4. return success response
+  return res.json(successResponse({ user }, MESSAGES.EMAIL.EMAIL_VERIFIED));
+});
+
 // ------------------------------------------------------------
+
+/**
+ * @desc    Soft delete a user account
+ * @route   DELETE /api/admin/users/:id
+ * @access  Private - Admin
+ */
+export const softDeleteUser = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. soft delete user from service
+  await AdminService.softDeleteUser(decoded, id);
+
+  // 4. return no content
+  return res.status(HTTP_STATUS.NO_CONTENT).end();
+});
+
 // ------------------------------------------------------------
+
+/**
+ * @desc    Revoke all refresh tokens for a user (force logout)
+ * @route   DELETE /api/admin/users/:id/sessions
+ * @access  Private - Admin
+ */
+export const revokeUserSessions = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. revoke sessions from service
+  await AdminService.revokeUserSessions(decoded, id);
+
+  // 4. return no content
+  return res.status(HTTP_STATUS.NO_CONTENT).end();
+});
+
 // ------------------------------------------------------------
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-// ------------------------------------------------------------
+
+/**
+ * @desc    Get platform-wide stats
+ * @route   GET /api/admin/stats
+ * @access  Private - Admin
+ */
+export const getStats = asyncHandler(async (req, res) => {
+  // 1. get stats from service
+  const stats = await AdminService.getStats();
+
+  // 2. return success response
+  return res.json(successResponse({ stats }, MESSAGES.ADMIN.STATS_FETCHED));
+});
+
 // ------------------------------------------------------------
