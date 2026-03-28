@@ -31,6 +31,7 @@ export const MESSAGES = {
   },
 
   ADMIN: {
+    REVOKE_DELETED_USER_ERROR: "Cannot revoke sessions for a deleted account.",
     FORBIDDEN_TARGET: "Cannot perform this action on a protected account",
     ROLE_UPDATED: "User role updated successfully",
     INVALID_ROLE: "Invalid role provided",

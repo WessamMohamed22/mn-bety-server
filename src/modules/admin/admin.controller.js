@@ -144,3 +144,39 @@ export const softDeleteUser = asyncHandler(async (req, res) => {
 });
 
 // ------------------------------------------------------------
+
+/**
+ * @desc    Revoke all refresh tokens for a user (force logout)
+ * @route   DELETE /api/admin/users/:id/sessions
+ * @access  Private - Admin
+ */
+export const revokeUserSessions = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. revoke sessions from service
+  await AdminService.revokeUserSessions(decoded, id);
+
+  // 4. return no content
+  return res.status(HTTP_STATUS.NO_CONTENT).end();
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Get platform-wide stats
+ * @route   GET /api/admin/stats
+ * @access  Private - Admin
+ */
+export const getStats = asyncHandler(async (req, res) => {
+  // 1. get stats from service
+  const stats = await AdminService.getStats();
+
+  // 2. return success response
+  return res.json(successResponse({ stats }, MESSAGES.ADMIN.STATS_FETCHED));
+});
+
+// ------------------------------------------------------------

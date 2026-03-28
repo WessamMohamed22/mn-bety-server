@@ -16,6 +16,9 @@ router.use(
   verifyPermissionsMW([ROLES.SUPER_ADMIN, ROLES.ADMIN])
 );
 
+// ----------------- Stats -----------------
+router.get("/stats", AdminController.getStats);
+
 // ----------------- User Management -----------------
 router.get("/users", AdminController.getUsers);
 
@@ -29,5 +32,6 @@ router.patch("/users/:id/verify-email", AdminController.verifyUserEmail);
 
 router.delete("/users/:id", AdminController.softDeleteUser);
 
+router.delete("/users/:id/sessions", AdminController.revokeUserSessions);
 
 export default router;

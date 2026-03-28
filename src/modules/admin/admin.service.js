@@ -222,3 +222,68 @@ export const softDeleteUser = async (decoded, userId) => {
   // 5. save changes in DB
   await user.save();
 };
+
+// ------------------------------------------------------------
+/**
+ * @desc    Revoke all refresh tokens for a user (force logout)
+ * @param   {Object} decoded - current user decoded data {roles, userId}
+ * @param   {string} userId - Target user ID from route param
+ * @returns {void}
+ */
+export const revokeUserSessions = async (decoded, userId) => {
+  // 1. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // 2. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
+
+  if (user.isDeleted)
+    throw createBadRequestError(MESSAGES.ADMIN.REVOKE_DELETED_USER_ERROR);
+
+  // 3. clear all refresh tokens and save
+  user.refreshTokens = [];
+  await user.save();
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Get platform-wide stats
+ * @returns {Object} counts by status, role, and signups this month
+ */
+export const getStats = async () => {
+  // 1. calculate start of current month
+  const startOfMonth = getStartOfMonth();
+
+  // 2. run all counts in parallel
+  const [
+    totalUsers,
+    verifiedUsers,
+    activeUsers,
+    deletedUsers,
+    newThisMonth,
+    byRole,
+  ] = await Promise.all([
+    User.countDocuments({}),
+    User.countDocuments({ emailVerified: true }),
+    User.countDocuments({ isActive: true, isDeleted: false }),
+    User.countDocuments({ isDeleted: true }),
+    User.countDocuments({ createdAt: { $gte: startOfMonth } }),
+    User.aggregate([
+      { $unwind: "$roles" },
+      { $group: { _id: "$roles", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  // 3. return formatted stats
+  return {
+    totalUsers,
+    verifiedUsers,
+    activeUsers,
+    deletedUsers,
+    newThisMonth,
+    byRole: Object.fromEntries(byRole.map(({ _id, count }) => [_id, count])),
+  };
+};
+// ------------------------------------------------------------
