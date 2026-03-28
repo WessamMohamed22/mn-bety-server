@@ -16,14 +16,18 @@ export const getUsers = asyncHandler(async (req, res) => {
   // 1. extract pagination info and filters data
   const { page, limit, ...filters } = req.query;
 
-  // 2. get users from service
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. get users from service
   const { users, pagination } = await AdminService.getUsers({
+    decoded,
     filters,
     page,
     limit,
   });
 
-  // 3. return success response
+  // 4. return success response
   return res.json(
     successResponse({ users, pagination }, MESSAGES.ADMIN.USERS_FETCHED)
   );
@@ -40,9 +44,69 @@ export const getUserById = asyncHandler(async (req, res) => {
   // 1. extract user id from route param
   const { userId } = req.params;
 
-  // 2. get user from service
-  const user = await AdminService.getUserById(userId);
+  // 2. get current user decoded data
+  const decoded = req.decoded;
 
-  // 3. return success response
+  // 3. get user from service
+  const user = await AdminService.getUserById(decoded, userId);
+
+  // 4. return success response
   return res.json(successResponse({ user }, MESSAGES.USER.FETCHED));
 });
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Change a user's role
+ * @route   PATCH /api/admin/users/:id/role
+ * @access  Private - Admin
+ */
+export const updateUserRole = asyncHandler(async (req, res) => {
+  // 1. validate role exists in body
+  const { role } = req.body;
+  if (!role) throw createBadRequestError(MESSAGES.VALIDATION.REQUIRED_FIELDS);
+
+  // 2. extract user id from route param
+  const { id } = req.params;
+
+  // 3. get current user decoded data
+  const decoded = req.decoded;
+
+  // 4. update role from service
+  const user = await AdminService.updateUserRole(decoded, id, role);
+
+  // 5. return success response
+  return res.json(successResponse({ user }, MESSAGES.ADMIN.ROLE_UPDATED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Toggle user isActive status (suspend / unsuspend)
+ * @route   PATCH /api/admin/users/:id/status
+ * @access  Private - Admin
+ */
+export const toggleUserStatus = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. toggle status from service
+  const user = await AdminService.toggleUserStatus(decoded, id);
+
+  // 4. return success response
+  return res.json(successResponse({ user }, MESSAGES.ADMIN.STATUS_UPDATED));
+});
+
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------

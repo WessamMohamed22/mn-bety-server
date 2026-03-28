@@ -44,11 +44,18 @@ export const safeUserData = (user, isAdmin = false) => {
  * @param   {Object} targetUser - User document from DB
  * @returns {void} throws if target is protected
  */
-export const guardProtectedRoles = (targetUser) => {
-  // 1. check if target user has a protected role
+export const guardProtectedRoles = (currentUser, targetUser) => {
+  // 1. super admin can modify anyone
+  console.log(currentUser.roles.includes(ROLES.SUPER_ADMIN))
+  console.log(currentUser.roles)
+  console.log(ROLES.SUPER_ADMIN)
+  if (currentUser.roles.includes(ROLES.SUPER_ADMIN)) return;
+  console.log(currentUser.roles.includes(ROLES.SUPER_ADMIN))
+  // 2. check if target user has a protected role
   const protectedRoles = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
-  const isProtected = targetUser.some((r) => protectedRoles.includes(r));
+  const isProtected = targetUser.roles.some((r) => protectedRoles.includes(r));
 
   // 2. throw if protected
+  // normal admin cannot modify other admins or super admins
   if (isProtected) throw createForbiddenError(MESSAGES.ADMIN.FORBIDDEN_TARGET);
 };

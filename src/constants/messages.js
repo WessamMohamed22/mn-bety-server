@@ -33,6 +33,7 @@ export const MESSAGES = {
   ADMIN: {
     FORBIDDEN_TARGET: "Cannot perform this action on a protected account",
     ROLE_UPDATED: "User role updated successfully",
+    INVALID_ROLE: "Invalid role provided",
     STATUS_UPDATED: "User status updated successfully",
     STATS_FETCHED: "Stats fetched successfully",
   },

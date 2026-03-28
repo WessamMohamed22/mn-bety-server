@@ -21,4 +21,8 @@ router.get("/users", AdminController.getUsers);
 
 router.get("/users/:userId", AdminController.getUserById);
 
+router.patch("/users/:id/role", AdminController.updateUserRole);
+
+router.patch("/users/:id/status", AdminController.toggleUserStatus);
+
 export default router;

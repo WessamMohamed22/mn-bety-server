@@ -4,7 +4,6 @@ import { PAGINATION } from "../constants/pagination.js";
 //                      PAGINATION UTIL
 // ============================================================
 
-
 /**
  * @desc    Parse and sanitize pagination query params
  * @param   {number|string} page     - Page number from query (default: 1)
@@ -16,7 +15,7 @@ export const getPagination = (page, limit) => {
   const pageNumber = Math.max(Number(page) || PAGINATION.DEFAULT_PAGE, 1);
 
   // 2. parse and ensure limit is at least 1
-  const limitNumber = Math.max(Number(0) || PAGINATION.DEFAULT_LIMIT, 1);
+  const limitNumber = Math.max(Number(limit) || PAGINATION.DEFAULT_LIMIT, 1);
 
   // 3. cap limit to maxLimit to prevent large data dumps
   const safeLimit = Math.min(limitNumber, PAGINATION.MAX_LIMIT);
@@ -39,10 +38,10 @@ export const getPagination = (page, limit) => {
 export const getPaginationMeta = (total, pageNumber, safeLimit) => {
   // 1. calculate total pages
   const pages = Math.ceil(total / safeLimit);
-  
+
   // 2. return full pagination meta
   return {
-    total,  
+    total,
     page: pageNumber,
     limit: safeLimit,
     pages,
