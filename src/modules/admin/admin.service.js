@@ -2,7 +2,10 @@ import User from "../../DB/models/user.model.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { ROLES } from "../../constants/roles.js";
 import { createNotFoundError } from "../../errors/error.factory.js";
-import { guardProtectedRoles, safeUserData } from "../../helpers/user.helper.js";
+import {
+  guardProtectedRoles,
+  safeUserData,
+} from "../../helpers/user.helper.js";
 import { parseQuery } from "../../utils/data.util.js";
 import {
   getPagination,
@@ -15,26 +18,28 @@ import {
 
 /**
  * @desc    Get paginated list of users with optional filters
+ * @param   {Object} decoded - current user decoded data {roles, userId}
  * @param   {Object} filters - {role, isActive, isDeleted, emailVerified, page, limit}
  * @returns {Object} users array + pagination meta
  */
-export const getUsers = async ({ filters, page, limit }) => {
+export const getUsers = async ({ decoded, filters, page, limit }) => {
   // 1. build cleanFilter object from filters qurey params
   const cleanFilter = filters
     ? parseQuery(filters, ["roles", "isActive", "isDeleted", "emailVerified"])
     : {};
 
-  // 2. filtering by roles
+  // 2. Filter roles based on current user level
   if (cleanFilter.roles) {
-    if (cleanFilter.roles === "customer") {
-      // show only people who haven't upgraded to Seller/Admin yet
-      cleanFilter.roles = { $size: 1, $all: ["customer"] };
-    } else if (cleanFilter.roles === "seller") {
-      // show everyone who sells, but hide the internal Admin team
-      cleanFilter.roles = { $all: ["seller"], $nin: ["admin"] };
-    } else if (Array.isArray(cleanFilter.roles)) {
-      // If the admin checks both 'customer' and 'seller' checkboxes
-      cleanFilter.roles = { $in: cleanFilter.roles, $nin: ["admin"] };
+    // make sure roles is array
+    const rolesFilter = Array.isArray(cleanFilter.roles)
+      ? cleanFilter.roles
+      : [cleanFilter.roles];
+
+    cleanFilter.roles = { $in: rolesFilter };
+
+    // normal admins cannot see other admins or super_admin
+    if (!decoded.roles.includes(ROLES.SUPER_ADMIN)) {
+      cleanFilter.roles.$nin = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
     }
   }
 
@@ -66,10 +71,11 @@ export const getUsers = async ({ filters, page, limit }) => {
 
 /**
  * @desc    Get single user full detail by ID
+ * @param   {Object} decoded - current user decoded data {roles, userId}
  * @param   {string} userId - Target user ID from route param
  * @returns {Object} user document (safe fields)
  */
-export const getUserById = async (userId) => {
+export const getUserById = async (decoded, userId) => {
   // 1. find user by id
   const user = await User.findById(userId)
     .select(
@@ -80,7 +86,10 @@ export const getUserById = async (userId) => {
   // 2. throw if not found
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  // 3. return user data
+  // 3. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
+
+  // 4. return user data
   return safeUserData(user, true);
 };
 
@@ -88,11 +97,12 @@ export const getUserById = async (userId) => {
 
 /**
  * @desc    Change a user's role
+ * @param   {Object} decoded - current user decoded data {roles, userId}
  * @param   {string} userId - Target user ID from route param
  * @param   {string} role   - New role to assign
  * @returns {Object} updated user document
  */
-export const updateUserRole = async (userId, role) => {
+export const updateUserRole = async (decoded, userId, role) => {
   // 1. validate role is allowed
   if (!Object.values(ROLES).includes(role))
     throw createBadRequestError(MESSAGES.ADMIN.INVALID_ROLE);
@@ -101,8 +111,8 @@ export const updateUserRole = async (userId, role) => {
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
-  // 3. guard against acting on protected accounts
-  guardProtectedRoles(user);
+  // 3. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
 
   // 4. apply new role and save
   if (!user.roles.includes(role)) {
@@ -118,16 +128,17 @@ export const updateUserRole = async (userId, role) => {
 
 /**
  * @desc    Toggle user isActive status (suspend / unsuspend)
+ * @param   {Object} decoded - current user decoded data {roles, userId}
  * @param   {string} userId - Target user ID from route param
  * @returns {Object} updated user document
  */
-export const toggleUserStatus = async (userId) => {
+export const toggleUserStatus = async (decoded, userId) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.ADMIN.USER_NOT_FOUND);
 
-  // 2. guard against acting on protected accounts
-  guardProtectedRoles(user);
+  // 2. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
 
   // 3. toggle isActive and save
   user.isActive = !user.isActive;
