@@ -18,7 +18,7 @@ export const getMe = async (userId) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
   if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
-  
+
   // 2. return safe user data
   return safeUserData(user);
 };
@@ -66,24 +66,34 @@ export const deleteAccount = async (userId) => {
   user.isActive = false;
   user.refreshTokens = [];
 
-  // 3. anonymize customer profile if exists
-  await Customer.findOneAndUpdate(
-    { userId },
-    {
-      $set: { "avatar.url": "", "avatar.publicId": "", bio: "" },
-      $unset: { location: "" },
-    }
-  );
+  // 3. anonymize customer and seller profile if exists
+  await Promise.all([
+    Customer.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          "avatar.url": "",
+          "avatar.publicId": "",
+          bio: "",
+          isDeleted: true,
+        },
+        $unset: { location: "" },
+      }
+    ),
+    Seller.findOneAndUpdate(
+      { user: userId },
+      {
+        $set: {
+          "logo.url": "",
+          "logo.publicId": "",
+          isActive: false,
+          isDeleted: true,
+        },
+        $unset: { description: "", location: "", bankInfo: "" },
+      }
+    ),
+  ]);
 
-  // 4. anonymize seller profile if exists
-  await Seller.findOneAndUpdate(
-    { user: userId },
-    {
-      $set: { "logo.url": "", "logo.publicId": "", isActive: false },
-      $unset: { description: "", location: "", bankInfo: "" },
-    }
-  );
-
-  // 5. save user changes in DB
+  // 4. save user changes in DB
   await user.save();
 };

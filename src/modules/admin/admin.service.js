@@ -1,12 +1,18 @@
+import Customer from "../../DB/models/customer.model.js";
+import Seller from "../../DB/models/saller.model.js";
 import User from "../../DB/models/user.model.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { ROLES } from "../../constants/roles.js";
-import { createNotFoundError } from "../../errors/error.factory.js";
+import {
+  createBadRequestError,
+  createNotFoundError,
+} from "../../errors/error.factory.js";
 import {
   guardProtectedRoles,
   safeUserData,
 } from "../../helpers/user.helper.js";
 import { parseQuery } from "../../utils/data.util.js";
+import { getStartOfMonth } from "../../utils/date.util.js";
 import {
   getPagination,
   getPaginationMeta,
@@ -135,7 +141,7 @@ export const updateUserRole = async (decoded, userId, role) => {
 export const toggleUserStatus = async (decoded, userId) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
-  if (!user) throw createNotFoundError(MESSAGES.ADMIN.USER_NOT_FOUND);
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
   // 2. Guard protected roles based on who is calling
   guardProtectedRoles(decoded, user);
@@ -149,3 +155,70 @@ export const toggleUserStatus = async (decoded, userId) => {
 };
 
 // ------------------------------------------------------------
+
+/**
+ * @desc    Soft delete a user account
+ * @param   {Object} decoded - current user decoded data {roles, userId}
+ * @param   {string} userId - Target user ID from route param
+ * @returns {void}
+ */
+export const verifyUserEmail = async (decoded, userId) => {
+  // 1. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // 2. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
+
+  // 2. throw if already verified
+  if (user.emailVerified)
+    throw createBadRequestError(MESSAGES.EMAIL.EMAIL_ALREADY_VERIFIED);
+
+  // 3. mark email as verified and clear verification token
+  user.emailVerified = true;
+  user.emailVerificationToken = { token: null, expireAt: null };
+
+  // 4. save changes in DB
+  await user.save();
+
+  // 5. return updated user
+  return user;
+};
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Manually mark a user's email as verified
+ * @param   {Object} decoded - current user decoded data {roles, userId}
+ * @param   {string} userId - Target user ID from route param
+ * @returns {Object} updated user document
+ */
+export const softDeleteUser = async (decoded, userId) => {
+  // 1. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // 2. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
+
+  // 3. throw if already deleted
+  if (user.isDeleted)
+    throw createBadRequestError(MESSAGES.USER.ALREADY_DELETED);
+
+  // 4. soft delete — deactivate, clear sessions, set deleted flags
+  user.fullName = "Deleted User";
+  user.email = `deleted_${userId}@deleted.com`;
+  user.isActive = false;
+  user.isDeleted = true;
+  user.deletedAt = new Date();
+  user.refreshTokens = [];
+
+  // 3. Disable associated profiles
+  await Promise.all([
+    Customer.findOneAndUpdate({ userId }, { isDeleted: true, isActive: false }),
+    Seller.findOneAndUpdate({ userId }, { isDeleted: true, isActive: false }),
+  ]);
+
+  // 5. save changes in DB
+  await user.save();
+};

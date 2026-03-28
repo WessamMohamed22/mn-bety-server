@@ -25,4 +25,9 @@ router.patch("/users/:id/role", AdminController.updateUserRole);
 
 router.patch("/users/:id/status", AdminController.toggleUserStatus);
 
+router.patch("/users/:id/verify-email", AdminController.verifyUserEmail);
+
+router.delete("/users/:id", AdminController.softDeleteUser);
+
+
 export default router;
