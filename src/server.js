@@ -2,7 +2,7 @@ import createApp from "./app.js";
 import { env } from "./config/env.js";
 import connectDB from "./DB/connection.js";
 import { verifyEmailTransporter } from "./services/email/email.service.js";
-
+import { connectRedis } from "./config/redis.js";
 // server instance
 let server;
 
@@ -11,6 +11,7 @@ let server;
 const startServer = async () => {
   // Connect DB:
   await connectDB();
+  await connectRedis();
   await verifyEmailTransporter();
 
   // create app
