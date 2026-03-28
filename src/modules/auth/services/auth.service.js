@@ -21,7 +21,7 @@ import {
   verifyPassword,
 } from "../../../utils/hash.util.js";
 import { getExpiryDate } from "../../../utils/date.util.js";
-import { safeUserData } from "../helpers/user.helper.js";
+import { safeUserData } from "../../../helpers/user.helper.js";
 import { sendEmail } from "../../../services/email/email.service.js";
 import {
   passwordResetEmailHtml,

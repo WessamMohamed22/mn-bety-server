@@ -30,13 +30,24 @@ export const MESSAGES = {
     NO_PERMISSION: "You do not have permission to access this resource",
   },
 
+  ADMIN: {
+    FORBIDDEN_TARGET: "Cannot perform this action on a protected account",
+    ROLE_UPDATED: "User role updated successfully",
+    INVALID_ROLE: "Invalid role provided",
+    STATUS_UPDATED: "User status updated successfully",
+    STATS_FETCHED: "Stats fetched successfully",
+  },
+
   USER: {
-    NOT_FOUND: "User not found",
     EMAIL_ALREADY_EXISTS: "Email already exists",
     FETCHED: "User fetched successfully",
+    USERS_FETCHED: "Users fetched successfully",
     UPDATED: "User updated successfully",
     DELETED: "User deleted successfully",
+    NOT_FOUND: "User not found",
+    ALREADY_DELETED: "User is already deleted",
     PASSWORD_CHANGED: "Password changed successfully",
+    INVALID_ROLE: "Invalid role provided",
   },
 
   EMAIL: {
