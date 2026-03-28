@@ -8,41 +8,47 @@ import {
 import { verifyAccessMW } from "../../middlewares/verifyAccessMW.js";
 import { verifyPermissionsMW } from "../../middlewares/verifyPermissionsMW.js";
 import { ROLES } from "../../constants/roles.js";
+import { requireVerifiedEmailMW } from "../../middlewares/requireVerifiedEmailMW.js";
 
 const router = express.Router();
 
+// 1. Stripe Webhook (Must be Public)
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  OrderController.stripeWebhook,
+  OrderController.stripeWebhook
 );
 
+// 2. Global Authentication & Verification for all order routes below
 router.use(verifyAccessMW);
+router.use(requireVerifiedEmailMW);
 
+// 3. Customer Routes
 router.post(
   "/checkout",
-  verifyPermissionsMW([ROLES.USER]),
+  verifyPermissionsMW([ROLES.CUSTOMER]),
   validateCheckout,
-  OrderController.checkout,
+  OrderController.checkout
 );
 
 router.patch(
   "/:orderId/cancel",
-  verifyPermissionsMW([ROLES.USER]),
+  verifyPermissionsMW([ROLES.CUSTOMER]),
   validateOrderIdParam,
-  OrderController.cancelMyOrder,
+  OrderController.cancelMyOrder
 );
 
 router.get(
   "/my-orders",
-  verifyPermissionsMW([ROLES.USER]),
-  OrderController.getMyOrders,
+  verifyPermissionsMW([ROLES.CUSTOMER]),
+  OrderController.getMyOrders
 );
 
+// 4. Seller & Admin Routes
 router.get(
   "/seller-orders",
   verifyPermissionsMW([ROLES.SELLER]),
-  OrderController.getSellerOrders,
+  OrderController.getSellerOrders
 );
 
 router.patch(
@@ -50,7 +56,7 @@ router.patch(
   verifyPermissionsMW([ROLES.SELLER, ROLES.ADMIN]),
   validateOrderIdParam,
   validateUpdateStatus,
-  OrderController.updateOrderStatus,
+  OrderController.updateOrderStatus
 );
 
 export default router;
