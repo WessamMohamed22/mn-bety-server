@@ -4,6 +4,7 @@ import Order from "../../../DB/models/orderItem.model.js";
 import Product from "../../../DB/models/product.model.js";
 import * as PaymentService from "./payment.service.js";
 import * as CartService from "../../cart/cart.service.js";
+import Seller from "../../../DB/models/saller.model.js";
 import {
   createBadRequestError,
   createNotFoundError,
@@ -183,4 +184,104 @@ export const updateOrderStatus = async (orderId, status) => {
   order.orderStatus = status;
   await order.save();
   return order;
+};
+
+
+
+export const getSellerStatistics = async (userId) => {
+  const seller = await Seller.findOne({ userId });
+  if (!seller) return null;
+
+  const sellerId = seller._id;
+
+  // Get current month sales
+  const currentDate = new Date();
+  const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const currentMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+  // Get previous month sales for comparison
+  const previousMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+  const previousMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+
+  const currentMonthStats = await Order.aggregate([
+    {
+      $match: {
+        "items.seller": sellerId,
+        orderStatus: { $in: ["shipped", "delivered"] },
+        createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+      }
+    },
+    { $unwind: "$items" },
+    { $match: { "items.seller": sellerId } },
+    {
+      $group: {
+        _id: null,
+        totalEarnings: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+      }
+    }
+  ]);
+
+  const previousMonthStats = await Order.aggregate([
+    {
+      $match: {
+        "items.seller": sellerId,
+        orderStatus: { $in: ["shipped", "delivered"] },
+        createdAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
+      }
+    },
+    { $unwind: "$items" },
+    { $match: { "items.seller": sellerId } },
+    {
+      $group: {
+        _id: null,
+        totalEarnings: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+      }
+    }
+  ]);
+
+  // Calculate growth rate
+  const currentEarnings = currentMonthStats[0]?.totalEarnings || 0;
+  const previousEarnings = previousMonthStats[0]?.totalEarnings || 0;
+  
+  let growthRate = 0;
+  if (previousEarnings > 0) {
+    growthRate = ((currentEarnings - previousEarnings) / previousEarnings * 100).toFixed(2);
+  } else if (currentEarnings > 0) {
+    growthRate = 100; // 100% growth if previous was 0
+  }
+
+  const salesStats = await Order.aggregate([
+    {
+      $match: {
+        "items.seller": sellerId,
+        orderStatus: { $in: ["shipped", "delivered"] }
+      }
+    },
+    { $unwind: "$items" },
+    { $match: { "items.seller": sellerId } },
+    {
+      $group: {
+        _id: null,
+        totalEarnings: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+      }
+    }
+  ]);
+
+  const newOrdersCount = await Order.countDocuments({
+    "items.seller": sellerId,
+    orderStatus: { $in: ["pending", "processing"] }
+  });
+
+  const activeProductsCount = await Product.countDocuments({
+    seller: sellerId,
+    isActive: true,
+    isApproved: true
+  });
+
+  return {
+    totalSales: salesStats[0]?.totalEarnings || 0,
+    newOrders: newOrdersCount,
+    activeProducts: activeProductsCount,
+    growthRate: parseFloat(growthRate)
+  };
 };
