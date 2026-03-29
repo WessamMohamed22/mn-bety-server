@@ -79,7 +79,7 @@ export const getMyOrders = asyncHandler(async (req, res) => {
 
 export const getSellerOrders = asyncHandler(async (req, res) => {
   const userId = req.decoded.userId;
-  const seller = await Seller.findOne({ user: userId });
+  const seller = await Seller.findOne({ userId });
   if (!seller) throw createForbiddenError(MESSAGES.order.sellerNotFound);
 
   const orders = await OrderService.getSellerOrders(seller._id);
@@ -95,8 +95,8 @@ export const getSellerOrders = asyncHandler(async (req, res) => {
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
-  const { orderStatus } = req.body;
-  const order = await OrderService.updateOrderStatus(orderId, orderStatus);
+  const newStatus = req.body.orderStatus || req.body.status;
+  const order = await OrderService.updateOrderStatus(orderId, newStatus);
   return res
     .status(HTTP_STATUS.OK)
     .json(successResponse({ order }, MESSAGES.order.statusUpdatedSuccessfully));

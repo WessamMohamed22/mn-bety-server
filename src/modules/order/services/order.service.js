@@ -60,7 +60,7 @@ export const createCashOrder = async (userId, shippingAddress) => {
   const { orderItems, totalPrice } = await getValidatedCart(userId);
 
   const order = await Order.create({
-    user: userId,
+    userId,
     items: orderItems,
     totalPrice,
     paymentMethod: "COD",
@@ -79,7 +79,7 @@ export const createStripeOrder = async (
   const { orderItems, totalPrice } = await getValidatedCart(userId);
 
   const order = await Order.create({
-    user: userId,
+    userId,
     items: orderItems,
     totalPrice,
     paymentMethod: "Stripe",
@@ -93,7 +93,7 @@ export const createStripeOrder = async (
 };
 
 export const cancelOrder = async (orderId, userId) => {
-  const order = await Order.findOne({ _id: orderId, user: userId });
+  const order = await Order.findOne({ _id: orderId, userId });
   if (!order) throw createNotFoundError(MESSAGES.order.notFound);
 
   // Only allow cancellation if it hasn't shipped yet
@@ -129,12 +129,17 @@ export const cancelOrder = async (orderId, userId) => {
 };
 
 export const getUserOrders = async (userId) => {
-  return await Order.find({ user: userId }).sort({ createdAt: -1 });
+  return await Order.find({ userId })
+  .populate("items.product", "name images price discountPrice")
+  .sort({ createdAt: -1 }).exec();
 };
 
 export const getSellerOrders = async (sellerId) => {
   return await Order.aggregate([
+    // 1. Find orders that contain at least one item from this seller
     { $match: { "items.seller": new mongoose.Types.ObjectId(sellerId) } },
+    
+    // 2. Filter the items array so the seller ONLY sees their own products, not other sellers' products in the same order
     {
       $addFields: {
         items: {
@@ -148,6 +153,25 @@ export const getSellerOrders = async (sellerId) => {
         },
       },
     },
+    
+    // 3. Populate the User data so the dashboard can show the Customer's Name!
+    {
+      $lookup: {
+        from: "users", // The exact name of your users collection in MongoDB
+        localField: "userId",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    
+    // 4. Flatten the user array into a single object
+    {
+      $unwind: {
+        path: "$user",
+        preserveNullAndEmptyArrays: true 
+      }
+    },
+    
     { $sort: { createdAt: -1 } },
   ]);
 };
