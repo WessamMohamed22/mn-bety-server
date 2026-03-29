@@ -101,3 +101,15 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     .status(HTTP_STATUS.OK)
     .json(successResponse({ order }, MESSAGES.order.statusUpdatedSuccessfully));
 });
+
+
+export const getDashboardSummary = asyncHandler(async (req, res) => {
+  const userId = req.decoded.userId;
+  
+  // Calling the renamed service function
+  const statistics = await OrderService.getSellerStatistics(userId);
+  
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse({ statistics }, "Dashboard statistics fetched successfully"));
+});
