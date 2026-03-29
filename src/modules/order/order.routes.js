@@ -18,11 +18,15 @@ router.post(
   express.raw({ type: "application/json" }),
   OrderController.stripeWebhook
 );
-
 // 2. Global Authentication & Verification for all order routes below
 router.use(verifyAccessMW);
 router.use(requireVerifiedEmailMW);
 
+router.get(
+  "/dashboard/statistics", // Changed from /stats
+  verifyPermissionsMW([ROLES.SELLER]),
+  OrderController.getDashboardSummary
+);
 // 3. Customer Routes
 router.post(
   "/checkout",
