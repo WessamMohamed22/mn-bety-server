@@ -7,7 +7,7 @@ import {
     createForbiddenError,
     createNotFoundError,
 } from "../../errors/error.factory.js";
-import Order from "../../DB/models/orderItem.model.js"; 
+import Order from "../../DB/models/orderItem.model.js";
 
 
 // ============================================================
@@ -53,29 +53,29 @@ export const createReview = async (userId, productId, data) => {
  * @returns {Object} { reviews, total, page, pages }
  */
 export const getProductReviews = async (productId, { page = 1, limit = 10 } = {}) => {
-  const product = await Product.findById(productId).exec();
-  if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
+    const product = await Product.findById(productId).exec();
+    if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
 
-  const total = await Review.countDocuments({ product: productId });
-  const pages = Math.ceil(total / limit);
+    const total = await Review.countDocuments({ product: productId });
+    const pages = Math.ceil(total / limit);
 
-  // ✅ Guard — clamp page to last available page
-  const safePage = Math.min(Number(page), pages || 1);
-  const skip = (safePage - 1) * limit;
+    // ✅ Guard — clamp page to last available page
+    const safePage = Math.min(Number(page), pages || 1);
+    const skip = (safePage - 1) * limit;
 
-  const reviews = await Review.find({ product: productId })
-    .populate("user", "fullName")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(Number(limit))
-    .exec();
+    const reviews = await Review.find({ product: productId })
+        .populate("user", "fullName")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .exec();
 
-  return {
-    reviews,
-    total,
-    page: safePage,   // ← returns the actual page served, not what was requested
-    pages,
-  };
+    return {
+        reviews,
+        total,
+        page: safePage,   // ← returns the actual page served, not what was requested
+        pages,
+    };
 };
 
 // ------------------------------------------------------------
@@ -180,11 +180,8 @@ const recalcProductRating = async (productId) => {
  * @desc   Get platform-wide statistics for buyer and seller satisfaction
  * @returns {Object} { buyerSatisfaction, sellerSatisfaction }
  */
-// controller/reviewController.js
-
 
 export const getPlatformStatistics = async () => {
-    // 1. حساب رضا المشتري من التقييمات
     const reviews = await Review.find();
     let buyerSatisfaction = 0;
 
@@ -194,18 +191,13 @@ export const getPlatformStatistics = async () => {
         buyerSatisfaction = Math.round((avgRating / 5) * 100);
     }
 
-    // 2. حساب رضا البائع من الأوردرات المكتملة
     const allOrders = await Order.find();
     let sellerSatisfaction = 0;
 
     if (allOrders && allOrders.length > 0) {
-        // ✅ التعديل هنا: استخدمنا orderStatus لأنها المعرفة في السكيما الخاصة بكِ
         const completedOrders = allOrders.filter(order => order.orderStatus === 'delivered').length;
-        
-        // النسبة = (عدد الطلبات المكتملة / إجمالي الطلبات) * 100
         sellerSatisfaction = Math.round((completedOrders / allOrders.length) * 100);
     } else {
-        // إذا لم يكن هناك طلبات بعد، نعطي نسبة 100% كبداية إيجابية للمنصة
         sellerSatisfaction = 100;
     }
 
