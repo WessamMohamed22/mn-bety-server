@@ -4,6 +4,7 @@ import {
   getProductReviews,
   getReviewById,
   updateReview,
+  getPlatformStats,
   deleteReview,
 } from "./review.controller.js";
 import {
@@ -15,6 +16,7 @@ import {
 import { verifyAccessMW }      from "../../middlewares/verifyAccessMW.js";
 import { verifyPermissionsMW } from "../../middlewares/verifyPermissionsMW.js";
 import { ROLES }               from "../../constants/roles.js";
+
 
 // ============================================================
 //                      REVIEW ROUTES
@@ -35,6 +37,7 @@ productReviewRouter.get(
   validatePagination,
   getProductReviews
 );
+productReviewRouter.get("/stats/platform", getPlatformStats);
 
 // POST /api/products/:productId/reviews
 productReviewRouter.post(
@@ -49,9 +52,9 @@ productReviewRouter.post(
 // ─── Standalone  →  /api/reviews ─────────────────────────────────────────────
 const router = express.Router();
 
-// GET    /api/reviews/:reviewId
-router.get("/:reviewId", validateMongoIdParam("reviewId"), getReviewById);
+router.get("/stats/platform", getPlatformStats);
 
+router.get("/:reviewId", validateMongoIdParam("reviewId"), getReviewById);
 // PUT    /api/reviews/:reviewId   (owner only)
 router.put(
   "/:reviewId",
