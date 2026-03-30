@@ -2,6 +2,8 @@ import * as ReviewService from "./review.service.js";
 import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";
+import Review from "../../DB/models/review.model.js";
+ 
 import {
   createdResponse,
   successResponse,
@@ -97,4 +99,26 @@ export const deleteReview = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .json(successResponse(null, MESSAGES.REVIEW.DELETED));
+});
+
+/**
+ * @desc    Get platform satisfaction statistics
+ * @route   GET /api/reviews/stats/platform
+ * @access  Public
+ */
+// في ملف review.controller.js
+
+export const getPlatformStats = asyncHandler(async (req, res, next) => {
+    // استدعاء دالة الحسابات من السيرفيس
+    const stats = await ReviewService.getPlatformStatistics();
+
+    // إرسال الرد للفرونت أند
+    res.status(200).json({
+        success: true,
+        message: "Platform statistics fetched successfully",
+        data: {
+            buyerSatisfaction: stats.buyerSatisfaction,
+            sellerSatisfaction: stats.sellerSatisfaction
+        }
+    });
 });
