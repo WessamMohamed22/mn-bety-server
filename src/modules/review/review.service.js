@@ -7,6 +7,8 @@ import {
     createForbiddenError,
     createNotFoundError,
 } from "../../errors/error.factory.js";
+import Order from "../../DB/models/orderItem.model.js"; 
+
 
 // ============================================================
 //                      REVIEW SERVICE
@@ -171,4 +173,44 @@ const recalcProductRating = async (productId) => {
         rating: result[0] ? Math.round(result[0].avgRating * 10) / 10 : 0,
         numReviews: result[0]?.count ?? 0,
     });
+};
+
+
+/**
+ * @desc   Get platform-wide statistics for buyer and seller satisfaction
+ * @returns {Object} { buyerSatisfaction, sellerSatisfaction }
+ */
+// controller/reviewController.js
+
+
+export const getPlatformStatistics = async () => {
+    // 1. حساب رضا المشتري من التقييمات
+    const reviews = await Review.find();
+    let buyerSatisfaction = 0;
+
+    if (reviews && reviews.length > 0) {
+        const totalRating = reviews.reduce((acc, item) => acc + item.rating, 0);
+        const avgRating = totalRating / reviews.length;
+        buyerSatisfaction = Math.round((avgRating / 5) * 100);
+    }
+
+    // 2. حساب رضا البائع من الأوردرات المكتملة
+    const allOrders = await Order.find();
+    let sellerSatisfaction = 0;
+
+    if (allOrders && allOrders.length > 0) {
+        // ✅ التعديل هنا: استخدمنا orderStatus لأنها المعرفة في السكيما الخاصة بكِ
+        const completedOrders = allOrders.filter(order => order.orderStatus === 'delivered').length;
+        
+        // النسبة = (عدد الطلبات المكتملة / إجمالي الطلبات) * 100
+        sellerSatisfaction = Math.round((completedOrders / allOrders.length) * 100);
+    } else {
+        // إذا لم يكن هناك طلبات بعد، نعطي نسبة 100% كبداية إيجابية للمنصة
+        sellerSatisfaction = 100;
+    }
+
+    return {
+        buyerSatisfaction: buyerSatisfaction || 0,
+        sellerSatisfaction: sellerSatisfaction || 0
+    };
 };
