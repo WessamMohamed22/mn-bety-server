@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minLength: 8,
-      unique: true,
+      // unique: true,
       match: [REGEX.EMAIL, MESSAGES.VALIDATION.INVALID_EMAIL],
       lowercase: true,
       trim: true,
@@ -70,10 +70,15 @@ const userSchema = new mongoose.Schema(
     },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
-    deletedAt: { type: Date, default: null },
+    deletedAt:  { type: Date,    default: null  },
     lastLogin: Date,
   },
   { timestamps: true }
+);
+
+userSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false } }
 );
 
 // hash password in the schema before saving
@@ -104,6 +109,6 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const User = mongoose.model.User || mongoose.model("User", userSchema);
 
 export default User;
