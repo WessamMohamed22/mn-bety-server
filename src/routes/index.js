@@ -8,6 +8,7 @@ import reviewRouter, { productReviewRouter } from "../modules/review/review.rout
 import customerRouter from "../modules/customer/customer.routes.js";
 import sellerRouter from "../modules/seller/seller.routes.js";
 import orderRouter from "../modules/order/order.routes.js";
+import notificationRouter from "../modules/notification/notification.routes.js";
 
 // ─── Route Handler
 
@@ -30,7 +31,7 @@ const routerHandler = (app) => {
   app.use("/api/products/:productId/reviews", productReviewRouter);
   app.use("/api/reviews", reviewRouter);
   app.use("/api/orders", orderRouter);
-
+  app.use("/api/notifications", notificationRouter);
   // ─── Unknown Route Handler
   app.use("/{*any}", (req, res) => {
     res.status(404).json({ message: "this Router is not found!" });
