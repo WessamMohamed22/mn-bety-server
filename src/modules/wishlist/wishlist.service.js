@@ -15,11 +15,12 @@ export const getWishlist = async (userId) => {
   const wishlist = await Wishlist.findOne({ userId })
     .populate({
       path: "products",
-      select: "name price discountPrice images slug rating isActive isApproved",
+      select: "name price discountPrice images slug rating stock isActive isApproved", // ← added stock
     })
     .exec();
 
-  return wishlist || { user: userId, products: [] };
+  // fixed: was { user: userId } which caused the duplicate key error
+  return wishlist || { userId, products: [] };
 };
 
 /**
@@ -45,7 +46,10 @@ export const addToWishlist = async (userId, productId) => {
   const alreadyExists = wishlist.products.some(
     (p) => p.toString() === productId.toString()
   );
-  if (alreadyExists) throw createConflictError(MESSAGES.WISHLIST.ALREADY_EXISTS);
+  if (alreadyExists) {
+    // Return existing wishlist (idempotent behavior)
+    return wishlist;
+  }
 
   // 4. add product & save
   wishlist.products.push(productId);
@@ -72,7 +76,16 @@ export const removeFromWishlist = async (userId, productId) => {
   );
 
   await wishlist.save();
-  return wishlist;
+
+  // Return updated wishlist with populated product data
+  const updatedWishlist = await Wishlist.findOne({ userId })
+    .populate({
+      path: "products",
+      select: "name price discountPrice images slug rating stock isActive isApproved",
+    })
+    .exec();
+
+  return updatedWishlist || { userId, products: [] };
 };
 
 /**
