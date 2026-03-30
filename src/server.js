@@ -3,6 +3,7 @@ import { env } from "./config/env.js";
 import connectDB from "./DB/connection.js";
 import { verifyEmailTransporter } from "./services/email/email.service.js";
 import { connectRedis } from "./config/redis.js";
+import { initSocket } from "./config/socket.js";
 // server instance
 let server;
 
@@ -21,6 +22,8 @@ const startServer = async () => {
     console.log(`server running on port: ${env.PORT}`);
     console.log(server.address());
   });
+
+  initSocket(server);
 };
 
 export default startServer;

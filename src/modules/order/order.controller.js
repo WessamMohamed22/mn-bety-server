@@ -9,6 +9,10 @@ import {
 import Seller from "../../DB/models/saller.model.js";
 import { createForbiddenError } from "../../errors/error.factory.js";
 import { MESSAGES } from "../../constants/messages.js";
+
+// Import our new Notification Service!
+import * as NotificationService from "../notification/notification.service.js";
+
 export const checkout = asyncHandler(async (req, res) => {
   const userId = req.decoded.userId;
   const { paymentMethod, shippingAddress } = req.body;
@@ -62,7 +66,24 @@ export const cancelMyOrder = asyncHandler(async (req, res) => {
   const userId = req.decoded.userId;
   const { orderId } = req.params;
 
+  // 1. Cancel the order in the database
   const order = await OrderService.cancelOrder(orderId, userId);
+
+  //  Notify the seller(s)
+  if (order.items && order.items.length > 0) {
+    for (const item of order.items) {
+      if (item.seller) {
+        await NotificationService.createNotification({
+          user: item.seller,
+          title: "إلغاء طلب",
+          message: `قام العميل بإلغاء الطلب رقم #${order._id.toString().slice(-6).toUpperCase()}`,
+          relatedId: order._id,
+          onModel: "Order",
+          type: "order_cancelled"
+        });
+      }
+    }
+  }
 
   return res
     .status(HTTP_STATUS.OK)
@@ -96,12 +117,27 @@ export const getSellerOrders = asyncHandler(async (req, res) => {
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const newStatus = req.body.orderStatus || req.body.status;
+  
+  // 1. Update the order in the database
   const order = await OrderService.updateOrderStatus(orderId, newStatus);
+
+  //  Notify the customer
+  const customerId = order.userId || order.user; 
+  if (customerId) {
+    await NotificationService.createNotification({
+      user: customerId,
+      title: "تحديث حالة الطلب",
+      message: `تم تحديث حالة طلبك رقم #${order._id.toString().slice(-6).toUpperCase()}`,
+      relatedId: order._id,
+      onModel: "Order",
+      type: "order_status"
+    });
+  }
+
   return res
     .status(HTTP_STATUS.OK)
     .json(successResponse({ order }, MESSAGES.order.statusUpdatedSuccessfully));
 });
-
 
 export const getDashboardSummary = asyncHandler(async (req, res) => {
   const userId = req.decoded.userId;
