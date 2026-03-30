@@ -117,13 +117,28 @@ export const upgradeToSeller = async (userId, data) => {
   if (user.roles.includes(ROLES.SELLER))
     throw createConflictError("You already have a seller account.");
 
+   const existingSeller = await Seller.findOne({ userId }).exec();
   // create seller profile
-  const seller = await Seller.create({
-    userId,
-    description: data?.description ?? "",
-    location:    data?.location    ?? {},
-    bankInfo:    data?.bankInfo    ?? {},
-  });
+   let seller;
+  if (existingSeller) {
+    // restore existing seller profile
+    existingSeller.isActive      = true;
+    existingSeller.isApproved    = false;
+    existingSeller.description   = data?.description ?? "";
+    existingSeller.location      = data?.location    ?? {};
+    existingSeller.bankInfo      = data?.bankInfo    ?? {};
+    existingSeller.logo          = { url: "", publicId: "" };
+    await existingSeller.save();
+    seller = existingSeller;
+  } else {
+    // create new seller profile
+    seller = await Seller.create({
+      userId,
+      description: data?.description ?? "",
+      location:    data?.location    ?? {},
+      bankInfo:    data?.bankInfo    ?? {},
+    });
+  }
 
   // add SELLER role to user
   user.roles.push(ROLES.SELLER);
