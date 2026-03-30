@@ -15,6 +15,12 @@ export const getMyProfile = async (userId) => {
     .exec();
 
   if (!customer) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // Normalise avatar for frontend: null if no image
+  if (!customer.avatar?.url) {
+    customer.avatar = null;
+  }
+
   return customer;
 };
 
