@@ -106,13 +106,9 @@ export const deleteReview = asyncHandler(async (req, res) => {
  * @route   GET /api/reviews/stats/platform
  * @access  Public
  */
-// في ملف review.controller.js
 
 export const getPlatformStats = asyncHandler(async (req, res, next) => {
-    // استدعاء دالة الحسابات من السيرفيس
     const stats = await ReviewService.getPlatformStatistics();
-
-    // إرسال الرد للفرونت أند
     res.status(200).json({
         success: true,
         message: "Platform statistics fetched successfully",
