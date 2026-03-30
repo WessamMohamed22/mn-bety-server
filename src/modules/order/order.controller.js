@@ -19,6 +19,27 @@ export const checkout = asyncHandler(async (req, res) => {
 
   if (paymentMethod === "COD") {
     const order = await OrderService.createCashOrder(userId, shippingAddress);
+    
+    // Notify Seller about NEW Order
+    if (order.items && order.items.length > 0) {
+      for (const item of order.items) {
+        if (item.seller) {
+          // Translate Seller Profile ID to User Account ID
+          const sellerProfile = await Seller.findById(item.seller);
+          if (sellerProfile && sellerProfile.userId) {
+            await NotificationService.createNotification({
+              user: sellerProfile.userId, // Send to the actual User ID!
+              title: "طلب جديد! ",
+              message: `لقد تلقيت طلباً جديداً رقم #${order._id.toString().slice(-6).toUpperCase()}`,
+              relatedId: order._id,
+              onModel: "Order",
+              type: "system"
+            });
+          }
+        }
+      }
+    }
+
     return res
       .status(HTTP_STATUS.CREATED)
       .json(createdResponse({ order }, MESSAGES.order.placedSuccessfully));
@@ -66,21 +87,24 @@ export const cancelMyOrder = asyncHandler(async (req, res) => {
   const userId = req.decoded.userId;
   const { orderId } = req.params;
 
-  // 1. Cancel the order in the database
   const order = await OrderService.cancelOrder(orderId, userId);
 
-  //  Notify the seller(s)
+  // Notify Seller about CANCELLED Order
   if (order.items && order.items.length > 0) {
     for (const item of order.items) {
       if (item.seller) {
-        await NotificationService.createNotification({
-          user: item.seller,
-          title: "إلغاء طلب",
-          message: `قام العميل بإلغاء الطلب رقم #${order._id.toString().slice(-6).toUpperCase()}`,
-          relatedId: order._id,
-          onModel: "Order",
-          type: "order_cancelled"
-        });
+        // Translate Seller Profile ID to User Account ID
+        const sellerProfile = await Seller.findById(item.seller);
+        if (sellerProfile && sellerProfile.userId) {
+          await NotificationService.createNotification({
+            user: sellerProfile.userId, // This now matches the socket registration!
+            title: "إلغاء طلب",
+            message: `قام العميل بإلغاء الطلب رقم #${order._id.toString().slice(-6).toUpperCase()}`,
+            relatedId: order._id,
+            onModel: "Order",
+            type: "order_cancelled"
+          });
+        }
       }
     }
   }
