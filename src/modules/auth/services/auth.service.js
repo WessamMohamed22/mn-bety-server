@@ -322,6 +322,7 @@ export const logoutUser = async (refreshToken) => {
  * @returns {Object} accessToken
  */
 export const refreshTokens = async (currentRefreshToken) => {
+  console.log(currentRefreshToken)
   // 1. hash current refreshToken
   const hashedToken = hashValue(currentRefreshToken);
 
