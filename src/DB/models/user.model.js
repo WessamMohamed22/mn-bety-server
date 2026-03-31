@@ -76,6 +76,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// make sure email isn't must be unique in if isDeleted = false
 userSchema.index(
   { email: 1 },
   { unique: true, partialFilterExpression: { isDeleted: false } }
