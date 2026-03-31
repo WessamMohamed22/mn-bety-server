@@ -6,10 +6,12 @@ export const env = {
   // Application
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: process.env.PORT || 4000,
+  SHETDOWN_TIMEOUT: Number(process.env.SHETDOWN_TIMEOUT) || 10_000,
 
   // Database
   DATABASE_URI: process.env.DATABASE_URI,
-  REDIS_URL: process.env.REDIS_URL ,
+  REDIS_URL: process.env.REDIS_URL,
+
   // AUTH
   AUTH: {
     RESET_PASSWORD_EXPIRE: process.env.RESET_PASSWORD_EXPIRE || "15m",
@@ -62,10 +64,10 @@ export const env = {
   },
 
   // Frontend
-  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:4000",
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+  ADMIN_URL: process.env.CLIENT_URL || "http://localhost:3000",
 
   // Development flags
   isDevelopment: process.env.NODE_ENV === "development",
   isProduction: process.env.NODE_ENV === "production",
-
 };
