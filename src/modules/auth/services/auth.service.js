@@ -38,16 +38,10 @@ import {
  * @param   {Object} userData - Raw user data from request body
  * @returns {Object} user, accessToken, refreshToken
  */
-
 export const registerUser = async (userData) => {
   // 1. check if email already used
   const emailExist = await User.findOne({ email: userData.email }).exec();
   if (emailExist) {
-
-    // ─── CASE A: soft-deleted user → RESTORE ─────────────────
-    if (emailExist.isDeleted) {
-      return await restoreUser(emailExist, userData);
-    }
     // if verified: block registering
     if (emailExist.emailVerified) {
       throw createConflictError(MESSAGES.USER.EMAIL_ALREADY_EXISTS);
@@ -116,60 +110,6 @@ export const registerUser = async (userData) => {
   };
 };
 
-// ─── restore soft-deleted user ────────────────────────────────
-const restoreUser = async (existingUser, newData) => {
-  const userId = existingUser._id;
-  const roles = [ROLES.CUSTOMER];
-
-  const accessToken = generateAccessToken({ userId, roles });
-  const refreshToken = generateRefreshToken({ userId });
-  const hashedToken = hashValue(refreshToken);
-
-  const { token: verificationToken, hashed: hashedVerificationToken } =
-    generateHashedToken();
-
-  // restore user fields
-  existingUser.fullName = newData.fullName;
-  existingUser.password = newData.password; // will be hashed by pre-save
-  existingUser.phone = newData.phone ?? null;
-  existingUser.roles = roles;
-  existingUser.isActive = true;
-  existingUser.isDeleted = false;
-  existingUser.deletedAt = null;
-  existingUser.emailVerified = false;
-  existingUser.refreshTokens = [{
-    token: hashedToken,
-    expireAt: getExpiryDate(env.JWT.REFRESH_EXPIRE),
-  }];
-  existingUser.emailVerificationToken = {
-    token: hashedVerificationToken,
-    expireAt: getExpiryDate(env.AUTH.EMAIL_VERIFICATION_EXPIRE),
-  };
-  existingUser.passwordResetToken = { token: null, expireAt: null };
-
-  await existingUser.save();
-
-  // restore customer profile
-  await Customer.findOneAndUpdate(
-    { userId },
-    { $set: { bio: "", "avatar.url": "", "avatar.publicId": "", "location.city": "", "location.address": "" } },
-    { upsert: true }
-  );
-
-  // send verification email
-  const VERIFY_URL = `${env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-  await sendEmail({
-    to: existingUser.email,
-    subject: MESSAGES.EMAIL.SUBJECTS.VERIFICATION,
-    html: verificationEmailHtml(VERIFY_URL),
-  });
-
-  return {
-    user: safeUserData(existingUser),
-    accessToken,
-    refreshToken,
-  };
-};
 // ------------------------------------------------------------
 
 /**
@@ -439,6 +379,7 @@ export const refreshTokens = async (currentRefreshToken) => {
   // 7. return tokens to controllers
   return { accessToken, refreshToken };
 };
+
 // ------------------------------------------------------------
 
 /**
@@ -456,7 +397,7 @@ export const changePassword = async (
 ) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
-  if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
   // 2. verify current password
   const valid = await verifyPassword(currentPassword, user.password);

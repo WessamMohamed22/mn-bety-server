@@ -17,11 +17,11 @@ import { safeUserData } from "../../../helpers/user.helper.js";
 export const getMe = async (userId) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
-  if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
+  if (!user) throw createNotFoundError(MESSAGES.AUTH.USER.NOT_FOUND);
 
   // 2. return safe user data
   const { _id, fullName, email, phone, roles } = user;
-  return { userId: _id, fullName, email, phone, roles};
+  return { userId: _id, fullName, email, phone, roles };
 };
 
 // ------------------------------------------------------------
@@ -35,7 +35,7 @@ export const getMe = async (userId) => {
 export const updateMe = async (userId, userData) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
-  if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
   // 2. apply updates (only allowed fields)
   const { fullName, phone } = userData;
@@ -58,50 +58,44 @@ export const updateMe = async (userId, userData) => {
 export const deleteAccount = async (userId) => {
   // 1. find user by id
   const user = await User.findById(userId).exec();
-  if (!user) throw createNotFoundError(MESSAGES.AUTH.USER_NOT_FOUND);
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
 
   // 2. anonymize user personal data
   user.fullName = `deleted_${userId}`;
   user.email = `deleted_${userId}@deleted.com`;
   user.phone = null;
   user.isActive = false;
-  user.isDeleted     = true;   // ← الجديد
-  user.deletedAt     = new Date();
+  user.isDeleted = true;
+  user.deletedAt = new Date();
   user.refreshTokens = [];
 
- 
-
-  // 3. anonymize customer profile if exists
-  await Customer.findOneAndUpdate(
-    { userId },
-    {
-      $set: { "avatar.url": "", "avatar.publicId": "", bio: "" },
-      $unset: { location: "" },
-    }
-  );
-
-  // 4. anonymize seller profile if exists
-  await Seller.findOneAndUpdate(
-    { user: userId },
-    {
-      $set: { "logo.url": "", "logo.publicId": "", isActive: false },
-      $unset: { description: "", location: "", bankInfo: "" },
-    }
-  );
-
-    // soft delete seller profile if exists
-  await Seller.findOneAndUpdate(
-    { userId },
-    {
-      $set: {
-        isActive:        false,
-        isApproved:      false,
-        "logo.url":      "",
-        "logo.publicId": "",
-      },
-      $unset: { description: "", location: "", bankInfo: "" },
-    }
-  );
+  await Promise.all([
+    Customer.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          "avatar.url": "",
+          "avatar.publicId": "",
+          bio: "",
+          isDeleted: true,
+        },
+        $unset: { location: "" },
+      }
+    ),
+    Seller.findOneAndUpdate(
+      { user: userId },
+      {
+        $set: {
+          "logo.url": "",
+          "logo.publicId": "",
+          isActive: false,
+          isDeleted: true,
+          isApproved: false,
+        },
+        $unset: { description: "", location: "", bankInfo: "" },
+      }
+    ),
+  ]);
 
   // 5. save user changes in DB
   await user.save();

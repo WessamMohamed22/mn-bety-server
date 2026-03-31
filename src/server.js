@@ -12,7 +12,7 @@ let server;
 const startServer = async () => {
   // Connect DB:
   await connectDB();
-  await connectRedis();
+  // await connectRedis();
   await verifyEmailTransporter();
 
   // create app
