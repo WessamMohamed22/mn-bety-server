@@ -9,4 +9,10 @@ const connectDB = async () => {
     console.log(`ERROR - from connectDB: ${err.message}!`);
   }
 };
+
+export const disconnectDB = async () => {
+  await mongoose.connection.close();
+  console.info("MongoDB disconnected");
+};
+
 export default connectDB;

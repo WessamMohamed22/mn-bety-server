@@ -1,6 +1,6 @@
 import { env } from "./config/env.js";
-import connectDB from "./DB/connection.js";
-import { connectRedis } from "./config/redis.js";
+import connectDB, { disconnectDB } from "./DB/connection.js";
+import { connectRedis, disconnectRedis } from "./config/redis.js";
 import createApp from "./app.js";
 import { initSocket } from "./config/socket.js";
 import { verifyEmailTransporter } from "./services/email/email.service.js";
@@ -24,7 +24,11 @@ const shutdown = (signal) => {
   server.close(async () => {
     try {
       console.info("HTTP server closed");
-      console.info("All requests finished — server closed cleanly");
+      // Close external connections with any services and DB
+      await disconnectRedis();
+      await disconnectDB();
+      console.info("All requests finished");
+      console.info('All connections closed — server shutdown complete')
       process.exit(0);
     } catch (err) {
       console.error("Error during shutdown:", err);
@@ -68,14 +72,10 @@ process.on("unhandledRejection", (reason) => {
 });
 
 // STARTSERVER
-// order matters:
-// 1. connect DB first - routes need DB to work
-// 2. create app - registers middleware and routes
-// 3. start listening - only accept requests when ready
 const startServer = async () => {
-  // 1. connect DB:
+  // 1. connect DB first - routes need DB to work
   await connectDB();
-  // 2. connect Redis DB
+  // 2. create app - registers middleware and routes
   await connectRedis();
   // 3. verify email transporter
   await verifyEmailTransporter();
@@ -87,7 +87,7 @@ const startServer = async () => {
     console.log(server.address());
   });
 
-  initSocket(server);
+  // initSocket(server);
 };
 
 export default startServer;
