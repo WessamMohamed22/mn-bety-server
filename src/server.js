@@ -1,9 +1,9 @@
-import createApp from "./app.js";
 import { env } from "./config/env.js";
 import connectDB from "./DB/connection.js";
-import { verifyEmailTransporter } from "./services/email/email.service.js";
 import { connectRedis } from "./config/redis.js";
+import createApp from "./app.js";
 import { initSocket } from "./config/socket.js";
+import { verifyEmailTransporter } from "./services/email/email.service.js";
 
 // server instance
 let server;
@@ -14,9 +14,22 @@ let server;
 const shutdown = (signal) => {
   console.warn(`${signal} received — starting graceful shutdown...`);
 
-  server.close(() => {
-    console.info("All requests finished — server closed cleanly");
-    process.exit(0); // 0 = success, clean exit
+  // check if server exist
+  if (!server) {
+    console.error("Server is not running");
+    process.exit(1);
+  }
+
+  // handle close server
+  server.close(async () => {
+    try {
+      console.info("HTTP server closed");
+      console.info("All requests finished — server closed cleanly");
+      process.exit(0);
+    } catch (err) {
+      console.error("Error during shutdown:", err);
+      process.exit(1);
+    }
   });
 
   // Safety net — if requests hang and server.close() never finishes,
@@ -24,7 +37,7 @@ const shutdown = (signal) => {
   setTimeout(() => {
     console.error("Graceful shutdown timed out — forcing exit");
     process.exit(1); // 1 = failure, forced exit
-  }, env.SHETDOWN_TIMEOUT);
+  }, env.SHUTDOWN_TIMEOUT);
 };
 
 // OS SIGNALS
@@ -60,14 +73,16 @@ process.on("unhandledRejection", (reason) => {
 // 2. create app - registers middleware and routes
 // 3. start listening - only accept requests when ready
 const startServer = async () => {
-  // Connect DB:
+  // 1. connect DB:
   await connectDB();
-  // await connectRedis();
+  // 2. connect Redis DB
+  await connectRedis();
+  // 3. verify email transporter
   await verifyEmailTransporter();
-  // create app
+  // 4. Create app
   const app = createApp();
-
-  const server = app.listen(env.PORT, () => {
+  // 5. Start HTTP server
+  server = app.listen(env.PORT, () => {
     console.log(`server running on port: ${env.PORT}`);
     console.log(server.address());
   });

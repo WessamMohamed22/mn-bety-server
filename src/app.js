@@ -7,7 +7,6 @@ import helmet from "helmet";
 import { requestLoggerMW } from "./middlewares/requestLoggerMW.js";
 import { errorHandler } from "./errors/errorHandler.js";
 import routerHandler from "./routes/index.js";
-// import { env } from "./config/env.js";
 import { corsOptions } from "./config/cors.js";
 
 dotenv.config();
@@ -18,12 +17,6 @@ const createApp = () => {
 
   // ======================= Middlewares:
   app.use(cors(corsOptions));
-  // app.use(
-  //   cors({
-  //     origin: env.CLIENT_URL,
-  //     credentials: true, //Accept cookies
-  //   })
-  // );
   app.use(helmet());
   app.post(
     "/api/orders/webhook",
