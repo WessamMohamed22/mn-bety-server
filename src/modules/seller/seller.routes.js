@@ -11,6 +11,7 @@ import {
   deleteSellerAccount,
   getPublicSellers,
   getPublicSellerProfile,
+  rejectSeller,
 
 } from "./seller.controller.js";
 import {
@@ -82,6 +83,11 @@ router.patch("/:id/approve",
   verifyPermissionsMW([ROLES.ADMIN]),
   validateMongoIdParam("id"),
   approveSeller
+);
+router.patch("/:id/reject",
+  verifyPermissionsMW([ROLES.ADMIN]),
+  validateMongoIdParam("id"),
+  rejectSeller
 );
 
 router.patch("/:id/toggle",
