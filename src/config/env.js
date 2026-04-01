@@ -6,11 +6,13 @@ export const env = {
   // Application
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: process.env.PORT || 4000,
-  SHETDOWN_TIMEOUT: Number(process.env.SHETDOWN_TIMEOUT) || 10_000,
+  SHUTDOWN_TIMEOUT: parseInt(process.env.SHUTDOWN_TIMEOUT) || 15_000,
 
   // Database
   DATABASE_URI: process.env.DATABASE_URI,
   REDIS_URL: process.env.REDIS_URL,
+  REDIS_RETRIES: parseInt(process.env.REDIS_RETRIES) || 3,
+  REDIS_DELAY: parseInt(process.env.REDIS_DELAY) || 1000,
 
   // AUTH
   AUTH: {

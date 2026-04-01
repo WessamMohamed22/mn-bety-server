@@ -23,7 +23,6 @@ export const errorHandler = (err, req, res, next) => {
   //  console.log("ERROR CODE:", err.code)  
   // use shallow copy
   let error = { ...err };
-  console.log(err)
   error.message = err.message || MESSAGES.ERROR.SERVER_ERROR;
   // if no status code then set it 500
   error.statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
