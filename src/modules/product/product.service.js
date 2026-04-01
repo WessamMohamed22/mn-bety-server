@@ -100,12 +100,13 @@ export const getAllProducts = async (query) => {
     search,
     sort = "-createdAt",
     featured,
+    isApproved, 
+    isActive   
   } = query;
 
-  const filter = { 
-    isApproved: true, 
-    isActive: true 
-  };
+  const filter = {};
+  if (isApproved !== undefined) filter.isApproved = isApproved === 'true' || isApproved === true;
+  if (isActive !== undefined) filter.isActive = isActive === 'true' || isActive === true;
 
   if (category) {
     const categoryIds = await getCategoryWithChildren(category);
@@ -313,16 +314,17 @@ export const toggleProductStatus = async (id, userId, roles) => {
 };
 
 // ─── Approve Product ──────────────────────────────────────────────────────────
+// ─── Approve/Disapprove Product (Admin Only) ──────────────────────────────────
 /**
- * @desc    Approve product — admin only
+ * @desc    Toggle approve status — admin only
  * @param   {string} id - Product _id
  * @returns {Object} { isApproved }
  */
 export const approveProduct = async (id) => {
   const product = await Product.findById(id).exec();
   if (!product) throw createNotFoundError(MESSAGES.PRODUCT.NOT_FOUND);
+  product.isApproved = !product.isApproved; 
 
-  product.isApproved = true;
   await product.save();
 
   return { isApproved: product.isApproved };

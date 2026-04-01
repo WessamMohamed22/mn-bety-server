@@ -274,7 +274,14 @@ export const getAllSellers = async ({ page = 1, limit = 10, search } = {}) => {
 
   const total = await Seller.countDocuments(filter);
 
+  // const sellers = await Seller.find(filter)
+  //   .select("-__v")
+  //   .sort({ createdAt: -1 })
+  //   .skip(skip)
+  //   .limit(Number(limit))
+  //   .exec();
   const sellers = await Seller.find(filter)
+    .populate("userId", "fullName email")
     .select("-__v")
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -295,7 +302,11 @@ export const getAllSellers = async ({ page = 1, limit = 10, search } = {}) => {
  * @desc    Admin — get seller by id
  */
 export const getSellerById = async (sellerId) => {
+  // const seller = await Seller.findById(sellerId)
+  //   .select("-__v")
+  //   .exec();
   const seller = await Seller.findById(sellerId)
+    .populate("userId", "fullName email")
     .select("-__v")
     .exec();
 
@@ -319,6 +330,16 @@ export const approveSeller = async (sellerId) => {
 };
 
 // ------------------------------------------------------------
+export const rejectSeller = async (sellerId) => {
+  const seller = await Seller.findById(sellerId).exec();
+  if (!seller) throw createNotFoundError(MESSAGES.SELLER.NOT_FOUND);
+
+  seller.isApproved = false;
+  await seller.save();
+
+  return { isApproved: seller.isApproved };
+};
+//-------------------------------------------------------------
 
 /**
  * @desc    Admin — toggle seller isActive

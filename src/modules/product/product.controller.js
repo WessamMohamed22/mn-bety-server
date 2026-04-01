@@ -151,7 +151,11 @@ export const toggleProductStatus = asyncHandler(async (req, res) => {
 export const approveProduct = asyncHandler(async (req, res) => {
   const { isApproved } = await ProductService.approveProduct(req.params.id);
 
+  const message = isApproved 
+    ? "Product approved successfully" 
+    : "Product disapproval successful";
+
   return res
     .status(HTTP_STATUS.OK)
-    .json(successResponse({ isApproved }, MESSAGES.PRODUCT.APPROVED));
+    .json(successResponse({ isApproved }, message));
 });
