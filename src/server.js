@@ -14,6 +14,10 @@ let server;
 const shutdown = (signal) => {
   console.warn(`${signal} received — starting graceful shutdown...`);
 
+  if (!server) {
+    process.exit(0);
+  }
+
   server.close(() => {
     console.info("All requests finished — server closed cleanly");
     process.exit(0); // 0 = success, clean exit
@@ -62,12 +66,12 @@ process.on("unhandledRejection", (reason) => {
 const startServer = async () => {
   // Connect DB:
   await connectDB();
-  // await connectRedis();
+  await connectRedis();
   await verifyEmailTransporter();
   // create app
   const app = createApp();
 
-  const server = app.listen(env.PORT, () => {
+  server = app.listen(env.PORT, () => {
     console.log(`server running on port: ${env.PORT}`);
     console.log(server.address());
   });
