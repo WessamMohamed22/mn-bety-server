@@ -133,6 +133,40 @@ export const updateUserRole = async (decoded, userId, role) => {
 // ------------------------------------------------------------
 
 /**
+ * @desc    Demote admin to seller (if exists) or customer
+ * @param   {Object} decoded - current user decoded data {roles, userId}
+ * @param   {string} userId - Target user ID from route param
+ * @returns {Object} updated user document
+ */
+export const demoteAdmin = async (decoded, userId) => {
+  // 1. find user by id
+  const user = await User.findById(userId).exec();
+  if (!user) throw createNotFoundError(MESSAGES.USER.NOT_FOUND);
+
+  // 2. throw if user is not an admin
+  if (!user.roles.includes(ROLES.ADMIN))
+    throw createBadRequestError(MESSAGES.ADMIN.NOT_AN_ADMIN);
+
+  // 3. Guard protected roles based on who is calling
+  guardProtectedRoles(decoded, user);
+
+  // 4. remove admin role and keep the rest of the roles
+  const fallbackRole = user.roles.filter((role) => role !== ROLES.ADMIN);
+
+  // 5. apply the new roles and clear verification token
+  user.roles = [...fallbackRole];
+  user.emailVerificationToken = { token: null, expireAt: null };
+
+  // 6. save changes in DB
+  await user.save();
+
+  // 7. return updated user
+  return user;
+};
+
+// ------------------------------------------------------------
+
+/**
  * @desc    Toggle user isActive status (suspend / unsuspend)
  * @param   {Object} decoded - current user decoded data {roles, userId}
  * @param   {string} userId - Target user ID from route param
