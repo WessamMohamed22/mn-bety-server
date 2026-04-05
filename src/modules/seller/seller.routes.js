@@ -68,30 +68,30 @@ router.delete("/me",
 
 // ─── Admin only ───────────────────────────────────────────────────────────────
 router.get("/",
-  verifyPermissionsMW([ROLES.ADMIN]),
+  verifyPermissionsMW([ROLES.ADMIN, ROLES.SUPER_ADMIN]),
   validateGetAllQuery,
   getAllSellers
 );
 
 router.get("/:id",
-  verifyPermissionsMW([ROLES.ADMIN]),
+  verifyPermissionsMW([ROLES.ADMIN, ROLES.SUPER_ADMIN]),
   validateMongoIdParam("id"),
   getSellerById
 );
 
 router.patch("/:id/approve",
-  verifyPermissionsMW([ROLES.ADMIN]),
+  verifyPermissionsMW([ROLES.ADMIN, ROLES.SUPER_ADMIN]),
   validateMongoIdParam("id"),
   approveSeller
 );
 router.patch("/:id/reject",
-  verifyPermissionsMW([ROLES.ADMIN]),
+  verifyPermissionsMW([ROLES.ADMIN, ROLES.SUPER_ADMIN]),
   validateMongoIdParam("id"),
   rejectSeller
 );
 
 router.patch("/:id/toggle",
-  verifyPermissionsMW([ROLES.ADMIN]),
+  verifyPermissionsMW([ROLES.ADMIN, ROLES.SUPER_ADMIN]),
   validateMongoIdParam("id"),
   toggleSellerStatus
 );

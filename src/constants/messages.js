@@ -150,6 +150,7 @@ export const MESSAGES = {
     FETCHED_ALL: "Sellers fetched successfully.",
     UPDATED: "Seller profile updated successfully.",
     APPROVED: "Seller approved successfully.",
+    REJECTED: "Seller rejected successfully.",
     ACTIVATED: "Seller is now active.",
     DEACTIVATED: "Seller is now inactive.",
   },
