@@ -46,11 +46,7 @@ export const safeUserData = (user, isAdmin = false) => {
  */
 export const guardProtectedRoles = (currentUser, targetUser) => {
   // 1. super admin can modify anyone
-  console.log(currentUser.roles.includes(ROLES.SUPER_ADMIN))
-  console.log(currentUser.roles)
-  console.log(ROLES.SUPER_ADMIN)
   if (currentUser.roles.includes(ROLES.SUPER_ADMIN)) return;
-  console.log(currentUser.roles.includes(ROLES.SUPER_ADMIN))
   // 2. check if target user has a protected role
   const protectedRoles = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
   const isProtected = targetUser.roles.some((r) => protectedRoles.includes(r));

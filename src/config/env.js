@@ -6,11 +6,17 @@ export const env = {
   // Application
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: process.env.PORT || 4000,
-  SHETDOWN_TIMEOUT: Number(process.env.SHETDOWN_TIMEOUT) || 10_000,
+  SHUTDOWN_TIMEOUT: parseInt(process.env.SHUTDOWN_TIMEOUT) || 15_000,
+
+  // Frontend
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+  ADMIN_URL: process.env.ADMIN_URL || "http://localhost:3000",
 
   // Database
   DATABASE_URI: process.env.DATABASE_URI,
   REDIS_URL: process.env.REDIS_URL,
+  REDIS_RETRIES: parseInt(process.env.REDIS_RETRIES) || 3,
+  REDIS_DELAY: parseInt(process.env.REDIS_DELAY) || 1000,
 
   // AUTH
   AUTH: {
@@ -62,10 +68,6 @@ export const env = {
     SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   },
-
-  // Frontend
-  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
-  ADMIN_URL: process.env.CLIENT_URL || "http://localhost:3000",
 
   // Development flags
   isDevelopment: process.env.NODE_ENV === "development",

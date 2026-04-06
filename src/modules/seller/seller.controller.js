@@ -6,6 +6,7 @@ import { createBadRequestError } from "../../errors/error.factory.js";
 import { MESSAGES } from "../../constants/messages.js";
 
 
+
 // ─── Seller (self) ────────────────────────────────────────────────────────────
 
 export const getMySellerProfile = asyncHandler(async (req, res) => {
@@ -97,6 +98,13 @@ export const approveSeller = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .json(successResponse({ isApproved }, MESSAGES.SELLER.APPROVED));
+});
+
+export const rejectSeller = asyncHandler(async (req, res) => {
+  const { isApproved } = await SellerService.rejectSeller(req.params.id);
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(successResponse({ isApproved }, MESSAGES.SELLER.REJECTED));
 });
 
 export const toggleSellerStatus = asyncHandler(async (req, res) => {

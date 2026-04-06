@@ -3,6 +3,7 @@ import asyncHandler from "../../middlewares/asyncHandler.js";
 import { MESSAGES } from "../../constants/messages.js";
 import { successResponse } from "../../utils/apiResponse.util.js";
 import { HTTP_STATUS } from "../../constants/httpStatus.js";
+import { createBadRequestError } from "../../errors/error.factory.js";
 
 // ============================================================
 //                      ADMIN CONTROLLER
@@ -77,6 +78,27 @@ export const updateUserRole = asyncHandler(async (req, res) => {
   const user = await AdminService.updateUserRole(decoded, id, role);
 
   // 5. return success response
+  return res.json(successResponse({ user }, MESSAGES.ADMIN.ROLE_UPDATED));
+});
+
+// ------------------------------------------------------------
+
+/**
+ * @desc    Demote admin to seller (if exists) or customer
+ * @route   PATCH /api/admin/users/:id/demote
+ * @access  Private - Superadmin
+ */
+export const demoteAdmin = asyncHandler(async (req, res) => {
+  // 1. extract user id from route param
+  const { id } = req.params;
+
+  // 2. get current user decoded data
+  const decoded = req.decoded;
+
+  // 3. demote admin from service
+  const user = await AdminService.demoteAdmin(decoded, id);
+
+  // 4. return success response
   return res.json(successResponse({ user }, MESSAGES.ADMIN.ROLE_UPDATED));
 });
 

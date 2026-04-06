@@ -20,6 +20,7 @@ export const initializeEmailTransporter = () => {
     secure: env.EMAIL.SECURE === "true",
     tls: {
       rejectUnauthorized: env.EMAIL.TLS_REJECT_UNAUTHORIZED,
+      family: 4 
     },
     auth: {
       user: env.EMAIL.USER,
